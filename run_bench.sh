@@ -5,9 +5,9 @@
 set -e
 
 MODEL=${1:?Usage: $0 /path/to/model.gguf}
-REPO_DIR="$(cd "$(dirname "$0")/llama.cpp" && pwd)"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$REPO_DIR/build"
-RESULTS_DIR="$(dirname "$0")/results"
+RESULTS_DIR="$REPO_DIR/results"
 mkdir -p "$RESULTS_DIR"
 
 echo "=== [1/4] Building ==="
@@ -33,7 +33,7 @@ echo "=== [3/4] llama-bench (prompt sizes x gen lengths) ==="
   -p 128,512,1024,2048 \
   -n 128 \
   -b 512,2048 \
-  -t 1,4,"$(nproc)" \
+  -t 1,8,16,32,"$(nproc)" \
   -r 5 \
   -o json \
   > "$RESULTS_DIR/llama_bench.json"

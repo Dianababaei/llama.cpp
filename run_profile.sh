@@ -6,7 +6,7 @@
 set -e
 
 MODEL=${1:?Usage: $0 /path/to/model.gguf}
-REPO_DIR="$(cd "$(dirname "$0")/llama.cpp" && pwd)"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$REPO_DIR/build"
 RESULTS_DIR="$(dirname "$0")/results"
 mkdir -p "$RESULTS_DIR"
