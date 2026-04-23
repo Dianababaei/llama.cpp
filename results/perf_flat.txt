@@ -1,0 +1,683 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 953K of event 'task-clock:ppp'
+# Event count (approx.): 954873872919
+#
+# Overhead  Command      Shared Object           Symbol                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+# ........  ...........  ......................  ..............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+#
+    33.87%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207ba
+            |
+            ---0x7d65628ff7ba
+               |          
+                --33.52%--0xb63c72000000000
+
+    19.51%  llama-bench  libggml-cpu.so.0.9.11   [.] (anonymous namespace)::tinygemm_kernel_vnni<block_q8_K, block_q4_K, float, 1, 64, 256>::apply(int, void const*, void const*, float*, int) [clone .constprop.0]
+            |
+            ---(anonymous namespace)::tinygemm_kernel_vnni<block_q8_K, block_q4_K, float, 1, 64, 256>::apply(int, void const*, void const*, float*, int) [clone .constprop.0]
+               ggml_backend_amx_mul_mat(ggml_compute_params const*, ggml_tensor*)
+               ggml::cpu::amx::tensor_traits::compute_forward(ggml_compute_params*, ggml_tensor*)
+               0x21
+
+    11.81%  llama-bench  libggml-cpu.so.0.9.11   [.] void (anonymous namespace)::tinygemm_kernel_amx<block_q8_K, block_q4_K, float, 256, 0>(int, int, int, void const*, void const*, float*, int) [clone .constprop.0]
+            |
+            ---void (anonymous namespace)::tinygemm_kernel_amx<block_q8_K, block_q4_K, float, 256, 0>(int, int, int, void const*, void const*, float*, int) [clone .constprop.0]
+               |          
+                --11.81%--ggml_backend_amx_mul_mat(ggml_compute_params const*, ggml_tensor*)
+                          ggml::cpu::amx::tensor_traits::compute_forward(ggml_compute_params*, ggml_tensor*)
+                          |          
+                           --11.78%--0x21
+
+     8.00%  llama-bench  libggml-cpu.so.0.9.11   [.] (anonymous namespace)::tinygemm_kernel_vnni<block_q8_K, block_q6_K, float, 1, 64, 256>::apply(int, void const*, void const*, float*, int) [clone .constprop.0]
+            |
+            ---(anonymous namespace)::tinygemm_kernel_vnni<block_q8_K, block_q6_K, float, 1, 64, 256>::apply(int, void const*, void const*, float*, int) [clone .constprop.0]
+               ggml_backend_amx_mul_mat(ggml_compute_params const*, ggml_tensor*)
+               ggml::cpu::amx::tensor_traits::compute_forward(ggml_compute_params*, ggml_tensor*)
+               0x21
+
+     5.11%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207be
+            |
+            ---0x7d65628ff7be
+               |          
+                --5.06%--0xb63c72000000000
+
+     4.63%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207c6
+            |
+            ---0x7d65628ff7c6
+               |          
+                --4.59%--0xb63c72000000000
+
+     2.62%  llama-bench  libggml-cpu.so.0.9.11   [.] void (anonymous namespace)::tinygemm_kernel_amx<block_q8_K, block_q6_K, float, 256, 0>(int, int, int, void const*, void const*, float*, int) [clone .constprop.0]
+            |
+            ---void (anonymous namespace)::tinygemm_kernel_amx<block_q8_K, block_q6_K, float, 256, 0>(int, int, int, void const*, void const*, float*, int) [clone .constprop.0]
+               ggml_backend_amx_mul_mat(ggml_compute_params const*, ggml_tensor*)
+               ggml::cpu::amx::tensor_traits::compute_forward(ggml_compute_params*, ggml_tensor*)
+               0x21
+
+     2.21%  llama-bench  libggml-cpu.so.0.9.11   [.] void (anonymous namespace)::tinyBLAS<16, float __vector(16), float __vector(16), unsigned short, unsigned short, float>::gemm_bloc<4, 6>(long, long)
+            |
+            ---void (anonymous namespace)::tinyBLAS<16, float __vector(16), float __vector(16), unsigned short, unsigned short, float>::gemm_bloc<4, 6>(long, long)
+               |          
+                --2.21%--void (anonymous namespace)::tinyBLAS<16, float __vector(16), float __vector(16), unsigned short, unsigned short, float>::gemm<4, 6, 2>(long, long, long) [clone .constprop.0]
+
+     1.98%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000208ef
+            |
+            ---0x7d65628ff8ef
+               |          
+                --1.23%--0
+
+     1.41%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_cpu_fp32_to_fp16
+            |
+            ---ggml_cpu_fp32_to_fp16
+
+     0.98%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207b8
+            |
+            ---0x7d65628ff7b8
+               |          
+                --0.97%--0xb63c72000000000
+
+     0.93%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_vec_dot_f16
+            |
+            ---ggml_vec_dot_f16
+               |          
+                --0.92%--ggml_compute_forward_mul_mat
+
+     0.61%  llama-bench  libggml-base.so.0.9.11  [.] quantize_row_q8_K_ref
+            |
+            ---quantize_row_q8_K_ref
+               ggml::cpu::amx::tensor_traits::compute_forward(ggml_compute_params*, ggml_tensor*)
+               |          
+                --0.61%--0x21
+
+     0.56%  llama-bench  [kernel.kallsyms]       [k] __pv_queued_spin_lock_slowpath
+            |
+            ---__pv_queued_spin_lock_slowpath
+               |          
+                --0.56%--_raw_spin_lock
+
+     0.43%  llama-bench  [kernel.kallsyms]       [k] down_read_trylock
+     0.41%  llama-bench  libggml-cpu.so.0.9.11   [.] void (anonymous namespace)::unpack_B<block_q6_K>(signed char*, void const*, int)
+     0.36%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020602
+     0.35%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_mul_mat
+     0.30%  llama-bench  ld-linux-x86-64.so.2    [.] __tls_get_addr
+     0.30%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207c3
+     0.28%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_soft_max
+     0.28%  llama-bench  libggml-cpu.so.0.9.11   [.] __tls_get_addr@plt
+     0.23%  llama-bench  [kernel.kallsyms]       [k] up_read
+     0.21%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_set_rows
+     0.14%  llama-bench  [kernel.kallsyms]       [k] do_user_addr_fault
+     0.11%  llama-bench  libggml-cpu.so.0.9.11   [.] void (anonymous namespace)::pack_qs<block_q4_K>(void*, block_q4_K const*, int)
+     0.10%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_graph_compute_thread.isra.0
+     0.10%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_rms_norm
+     0.09%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_vec_swiglu_f32
+     0.09%  llama-bench  [kernel.kallsyms]       [k] smp_call_function_many_cond
+     0.08%  llama-bench  [kernel.kallsyms]       [k] __handle_mm_fault
+     0.08%  llama-bench  libggml-cpu.so.0.9.11   [.] void (anonymous namespace)::tinyBLAS<16, float __vector(16), float __vector(16), unsigned short, unsigned short, float>::gemm_bloc<4, 5>(long, long)
+     0.07%  llama-bench  libggml-cpu.so.0.9.11   [.] void rotate_pairs<float>(long, long, float const*, float const*, float*, int)
+     0.07%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_mul
+     0.07%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_add_non_quantized
+     0.06%  llama-bench  libc.so.6               [.] 0x00000000001a6937
+     0.06%  llama-bench  [kernel.kallsyms]       [k] __x2apic_send_IPI_mask
+     0.06%  llama-bench  [kernel.kallsyms]       [k] _raw_spin_unlock_irqrestore
+     0.05%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020606
+     0.05%  llama-bench  [kernel.kallsyms]       [k] get_mem_cgroup_from_mm
+     0.05%  llama-bench  [kernel.kallsyms]       [k] _raw_spin_lock
+     0.04%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_threadpool_chunk_add
+     0.04%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000002060d
+     0.04%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_backend_amx_mul_mat(ggml_compute_params const*, ggml_tensor*)
+     0.04%  llama-bench  [kernel.kallsyms]       [k] __raw_spin_unlock_irq
+     0.04%  llama-bench  [kernel.kallsyms]       [k] rmap_walk_anon
+     0.04%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_vec_soft_max_f32
+     0.04%  llama-bench  [kernel.kallsyms]       [k] migrate_folio_unmap
+     0.03%  llama-bench  libggml-cpu.so.0.9.11   [.] void parallel_for<(anonymous namespace)::convert_B_packed_format<block_q4_K, 256>(void*, block_q4_K const*, int, int)::{lambda(int, int)#1}>(int, (anonymous namespace)::convert_B_packed_format<block_q4_K, 256>(void*, block_q4_K const*, int, int)::{lambda(int, int)#1} const&) [clone ._omp_fn.0]
+     0.03%  llama-bench  libggml-cpu.so.0.9.11   [.] void (anonymous namespace)::pack_qs<block_q6_K>(void*, block_q6_K const*, int)
+     0.03%  llama-bench  libc.so.6               [.] syscall
+     0.03%  llama-bench  [kernel.kallsyms]       [k] __raw_callee_save___pv_queued_spin_unlock
+     0.03%  llama-bench  [kernel.kallsyms]       [k] mem_cgroup_commit_charge
+     0.03%  llama-bench  [kernel.kallsyms]       [k] do_syscall_64
+     0.03%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml::cpu::amx::extra_buffer_type::get_tensor_traits(ggml_tensor const*)
+     0.02%  llama-bench  [kernel.kallsyms]       [k] clear_page_erms
+     0.02%  llama-bench  [kernel.kallsyms]       [k] copy_page
+     0.02%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_rope_cache_init(float, float, float const*, float*, long, float, float, float*, float, float)
+     0.02%  llama-bench  [kernel.kallsyms]       [k] handle_pte_fault
+     0.02%  llama-bench  libggml-base.so.0.9.11  [.] ggml_blck_size
+     0.02%  llama-bench  [kernel.kallsyms]       [k] page_vma_mapped_walk
+     0.02%  llama-bench  [kernel.kallsyms]       [k] folio_get_anon_vma
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] void ggml_compute_forward_rope_flt<float>(ggml_compute_params const*, ggml_tensor*, bool)
+     0.01%  llama-bench  libc.so.6               [.] 0x00000000001a6c15
+     0.01%  llama-bench  [kernel.kallsyms]       [k] lock_vma_under_rcu
+     0.01%  llama-bench  [kernel.kallsyms]       [k] mas_walk
+     0.01%  llama-bench  [kernel.kallsyms]       [k] migrate_pages_batch
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_cpu_extra_compute_forward
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] (anonymous namespace)::transpose_16x16_32bit(long long __vector(8)*)
+     0.01%  llama-bench  libggml-base.so.0.9.11  [.] ggml_is_empty
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] void parallel_for<(anonymous namespace)::convert_B_packed_format<block_q6_K, 256>(void*, block_q6_K const*, int, int)::{lambda(int, int)#1}>(int, (anonymous namespace)::convert_B_packed_format<block_q6_K, 256>(void*, block_q6_K const*, int, int)::{lambda(int, int)#1} const&) [clone ._omp_fn.0]
+     0.01%  llama-bench  [kernel.kallsyms]       [k] folio_lock_anon_vma_read
+     0.01%  llama-bench  [kernel.kallsyms]       [k] _raw_spin_trylock
+     0.01%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207ca
+     0.01%  llama-bench  [kernel.kallsyms]       [k] consume_stock
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_glu
+     0.01%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020600
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_dup_bytes(ggml_compute_params const*, ggml_tensor*)
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_blck_size@plt
+     0.01%  llama-bench  libc.so.6               [.] 0x00000000001a6893
+     0.01%  llama-bench  libggml-base.so.0.9.11  [.] ggml_can_repeat
+     0.01%  llama-bench  libggml-base.so.0.9.11  [.] ggml_type_size
+     0.01%  llama-bench  [kernel.kallsyms]       [k] count_memcg_events.constprop.0
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] rope_yarn(float, float, float*, long, float, float, float*, float*)
+     0.01%  llama-bench  libc.so.6               [.] 0x00000000001a69da
+     0.01%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207cd
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] void (anonymous namespace)::tinyBLAS<16, float __vector(16), float __vector(16), unsigned short, unsigned short, float>::gemm<4, 6, 2>(long, long, long) [clone .constprop.0]
+     0.01%  llama-bench  [kernel.kallsyms]       [k] percpu_counter_add_batch
+     0.01%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_backend_amx_buffer_type()
+     0.01%  llama-bench  [kernel.kallsyms]       [k] do_anonymous_page
+     0.01%  llama-bench  [kernel.kallsyms]       [k] try_charge_memcg
+     0.01%  llama-bench  libggml-base.so.0.9.11  [.] ggml_is_contiguous_n
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __get_user_8
+     0.00%  llama-bench  [kernel.kallsyms]       [k] try_to_migrate_one
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_barrier
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_add
+     0.00%  llama-bench  [kernel.kallsyms]       [k] handle_mm_fault
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __mod_node_page_state
+     0.00%  llama-bench  [kernel.kallsyms]       [k] can_change_pte_writable
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a690a
+     0.00%  llama-bench  [kernel.kallsyms]       [k] fpu_xstate_prctl
+     0.00%  llama-bench  [kernel.kallsyms]       [k] vm_normal_folio
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_backend_cpu_get_extra_buffer_types()
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_remove_rmap_ptes
+     0.00%  llama-bench  [kernel.kallsyms]       [k] set_ptes.constprop.0
+     0.00%  llama-bench  [kernel.kallsyms]       [k] zap_pte_range
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __pte_offset_map
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __lruvec_stat_mod_folio
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000002060b
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __ptep_modify_prot_start
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_add_lru
+     0.00%  llama-bench  [kernel.kallsyms]       [k] update_blocked_averages
+     0.00%  llama-bench  [kernel.kallsyms]       [k] finish_task_switch.isra.0
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_rope_yarn_corr_dims
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml::cpu::repack::extra_buffer_type::get_tensor_traits(ggml_tensor const*)
+     0.00%  llama-bench  libm.so.6               [.] log2
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000206bf
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000208e7
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] GOMP_barrier
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __alloc_pages
+     0.00%  llama-bench  [kernel.kallsyms]       [k] get_page_from_freelist
+     0.00%  llama-bench  [kernel.kallsyms]       [k] pmd_val
+     0.00%  llama-bench  [kernel.kallsyms]       [k] release_pages
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_nelements
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_is_contiguous_rows
+     0.00%  llama-bench  [kernel.kallsyms]       [k] llist_add_batch
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_row_size
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_migrate_flags
+     0.00%  llama-bench  [kernel.kallsyms]       [k] get_vma_policy
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_backend_cpu_repack_buffer_type()
+     0.00%  llama-bench  [kernel.kallsyms]       [k] x64_sys_call
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000002091f
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __mod_memcg_lruvec_state
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __raw_spin_unlock_irq
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_get_glu_op
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_rope
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __mem_cgroup_charge
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_is_contiguous_1
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml::cpu::amx::tensor_traits::compute_forward(ggml_compute_params*, ggml_tensor*)
+     0.00%  llama-bench  [kernel.kallsyms]       [k] rseq_update_cpu_node_id
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_are_same_shape
+     0.00%  llama-bench  [kernel.kallsyms]       [k] change_pte_range
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_add_new_anon_rmap
+     0.00%  llama-bench  [kernel.kallsyms]       [k] next_uptodate_folio
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_nrows
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] GOMP_single_start
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007af41
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __pte_offset_map_lock
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_xchg_last_cpupid
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69bc
+     0.00%  llama-bench  [kernel.kallsyms]       [k] do_arch_prctl_64
+     0.00%  llama-bench  [kernel.kallsyms]       [k] rmqueue
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __rmqueue_pcplist
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_graph_compute._omp_fn.0
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] llamafile_sgemm
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020803
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_vocab::impl::load(llama_model_loader&, LLM_KV const&)
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007add0
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae1d
+     0.00%  llama-bench  [kernel.kallsyms]       [k] do_numa_page
+     0.00%  llama-bench  [kernel.kallsyms]       [k] filemap_map_pages
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_isolate_lru
+     0.00%  llama-bench  [kernel.kallsyms]       [k] should_flush_tlb
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_is_contiguous
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mod_node_page_state
+     0.00%  llama-bench  [kernel.kallsyms]       [k] page_counter_try_charge
+     0.00%  llama-bench  [kernel.kallsyms]       [k] pte_offset_map_nolock
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] sincosf@plt
+     0.00%  llama-bench  [kernel.kallsyms]       [k] futex_wake
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a68da
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] dequantize_row_q4_K
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_is_contiguous_0
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] memcpy@plt
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007aef0
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b7cb
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_lruvec_lock_irq
+     0.00%  llama-bench  [kernel.kallsyms]       [k] post_alloc_hook
+     0.00%  llama-bench  libc.so.6               [.] _IO_fread
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69ad
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69d4
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000002089d
+     0.00%  llama-bench  [kernel.kallsyms]       [k] rcu_all_qs
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a699d
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b8f4
+     0.00%  llama-bench  [kernel.kallsyms]       [k] _find_first_bit
+     0.00%  llama-bench  [kernel.kallsyms]       [k] cgroup_rstat_updated
+     0.00%  llama-bench  [kernel.kallsyms]       [k] do_arch_prctl_common
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_add_anon_rmap_ptes
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_unlock
+     0.00%  llama-bench  [kernel.kallsyms]       [k] migration_entry_wait_on_locked
+     0.00%  llama-bench  [kernel.kallsyms]       [k] node_is_toptier
+     0.00%  llama-bench  [kernel.kallsyms]       [k] page_counter_cancel
+     0.00%  llama-bench  [kernel.kallsyms]       [k] vm_normal_page
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_backend_amx_mul_mat(ggml_compute_params const*, ggml_tensor*)@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_get_type_traits_cpu
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_type_size@plt
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207dd
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020875
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b00a
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b942
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long)
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __x64_sys_arch_prctl
+     0.00%  llama-bench  [kernel.kallsyms]       [k] access_error
+     0.00%  llama-bench  [kernel.kallsyms]       [k] blk_cgroup_congested
+     0.00%  llama-bench  [kernel.kallsyms]       [k] p4d_offset
+     0.00%  llama-bench  [kernel.kallsyms]       [k] pud_val
+     0.00%  llama-bench  [kernel.kallsyms]       [k] syscall_exit_to_user_mode_prepare
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69cc
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_type_size@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] GOMP_barrier@plt
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000002076a
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b752
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b967
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __cond_resched
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __mod_lruvec_state
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __put_user_8
+     0.00%  llama-bench  [kernel.kallsyms]       [k] do_futex
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mpol_misplaced
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_backend_cpu_get_extra_buffer_types()@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_cont
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000001dbec
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020760
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, unsigned char>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, unsigned char> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_find_before_node(unsigned long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long) const
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] unicode_utf8_to_byte(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b740
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_add_file_rmap_ptes
+     0.00%  llama-bench  [kernel.kallsyms]       [k] get_futex_key
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mem_cgroup_from_task
+     0.00%  llama-bench  [kernel.kallsyms]       [k] native_set_pte
+     0.00%  llama-bench  [kernel.kallsyms]       [k] policy_nodemask
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_dup
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_get_rows
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000208fc
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_find_before_node(unsigned long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long) const
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::_Hashtable<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::pair<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > const, int>, std::allocator<std::pair<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > const, int> >, std::__detail::_Select1st, std::equal_to<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, llama_vocab::impl::pair_hash, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_find_before_node(unsigned long, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > const&, unsigned long) const
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b7ab
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b8fe
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b980
+     0.00%  llama-bench  [kernel.kallsyms]       [k] _find_next_bit
+     0.00%  llama-bench  [kernel.kallsyms]       [k] anon_vma_interval_tree_iter_first
+     0.00%  llama-bench  [kernel.kallsyms]       [k] cond_accept_memory
+     0.00%  llama-bench  [kernel.kallsyms]       [k] free_swap_cache
+     0.00%  llama-bench  [kernel.kallsyms]       [k] free_unref_page_prepare
+     0.00%  llama-bench  [kernel.kallsyms]       [k] numa_migrate_prep
+     0.00%  llama-bench  [kernel.kallsyms]       [k] numa_rebuild_single_mapping.constprop.0
+     0.00%  llama-bench  [kernel.kallsyms]       [k] pfn_swap_entry_to_page
+     0.00%  llama-bench  [kernel.kallsyms]       [k] task_numa_fault
+     0.00%  llama-bench  [kernel.kallsyms]       [k] vma_alloc_folio
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6880
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6942
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6987
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69b4
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_blck_size@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_is_contiguous@plt
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000206b7
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000002079e
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000208f4
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b900
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b920
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __futex_wait
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __rseq_handle_notify_resume
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __x64_sys_futex
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_batch_move_lru
+     0.00%  llama-bench  [kernel.kallsyms]       [k] futex_q_lock
+     0.00%  llama-bench  [kernel.kallsyms]       [k] migrate_misplaced_folio_prepare
+     0.00%  llama-bench  [kernel.kallsyms]       [k] remove_migration_pte
+     0.00%  llama-bench  [kernel.kallsyms]       [k] task_numa_group
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_is_empty@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_backend_amx_buffer_type()@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_barrier@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_can_repeat@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_cpu_extra_compute_forward@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_row_size@plt
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020772
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007af00
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b21a
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::_Hash_bytes(void const*, unsigned long, unsigned long)
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __raw_spin_unlock_irq
+     0.00%  llama-bench  [kernel.kallsyms]       [k] do_swap_page
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_prep_large_rmappable
+     0.00%  llama-bench  [kernel.kallsyms]       [k] follow_pud_mask.isra.0
+     0.00%  llama-bench  [kernel.kallsyms]       [k] futex_hash
+     0.00%  llama-bench  [kernel.kallsyms]       [k] irqentry_exit_to_user_mode
+     0.00%  llama-bench  [kernel.kallsyms]       [k] migrate_folio_done
+     0.00%  llama-bench  [kernel.kallsyms]       [k] migrate_hugetlbs
+     0.00%  llama-bench  [kernel.kallsyms]       [k] migrate_pages
+     0.00%  llama-bench  [kernel.kallsyms]       [k] native_write_msr
+     0.00%  llama-bench  [kernel.kallsyms]       [k] queued_spin_unlock
+     0.00%  llama-bench  [kernel.kallsyms]       [k] rebalance_domains
+     0.00%  llama-bench  [kernel.kallsyms]       [k] task_mm_cid_work
+     0.00%  llama-bench  [kernel.kallsyms]       [k] uncharge_batch
+     0.00%  llama-bench  [kernel.kallsyms]       [k] zone_watermark_ok
+     0.00%  llama-bench  libc.so.6               [.] cfree
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6914
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69c4
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001ae8d8
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_is_empty@plt
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000001dc08
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000001dc1e
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020854
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000208e0
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020917
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_rehash(unsigned long, unsigned long const&)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::compare(char const*) const@plt
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::pair<std::__detail::_Node_iterator<std::pair<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > const, int>, false, true>, bool> std::_Hashtable<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::pair<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > const, int>, std::allocator<std::pair<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > const, int> >, std::__detail::_Select1st, std::equal_to<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, llama_vocab::impl::pair_hash, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_emplace<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, int&>(std::integral_constant<bool, true>, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&&, int&) [clone .isra.0]
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] void set_input_kq_mask_impl<true, false, false, false>(args_set_input_kq_mask const&, float*)
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae79
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b7bd
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __folio_throttle_swaprate
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __get_user_pages
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __memcg_kmem_charge_page
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __ptep_modify_prot_commit
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __zone_watermark_ok
+     0.00%  llama-bench  [kernel.kallsyms]       [k] alloc_pages_mpol
+     0.00%  llama-bench  [kernel.kallsyms]       [k] anon_vma_interval_tree_iter_next
+     0.00%  llama-bench  [kernel.kallsyms]       [k] check_pte
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_mark_accessed
+     0.00%  llama-bench  [kernel.kallsyms]       [k] free_unref_page
+     0.00%  llama-bench  [kernel.kallsyms]       [k] free_unref_page_list
+     0.00%  llama-bench  [kernel.kallsyms]       [k] get_pfnblock_flags_mask
+     0.00%  llama-bench  [kernel.kallsyms]       [k] kthread_blkcg
+     0.00%  llama-bench  [kernel.kallsyms]       [k] map_pte
+     0.00%  llama-bench  [kernel.kallsyms]       [k] migrate_misplaced_folio
+     0.00%  llama-bench  [kernel.kallsyms]       [k] pfn_pte
+     0.00%  llama-bench  [kernel.kallsyms]       [k] plist_add
+     0.00%  llama-bench  [kernel.kallsyms]       [k] pte_mkwrite
+     0.00%  llama-bench  [kernel.kallsyms]       [k] set_tlb_ubc_flush_pending.isra.0
+     0.00%  llama-bench  [kernel.kallsyms]       [k] task_numa_placement
+     0.00%  llama-bench  [kernel.kallsyms]       [k] uncharge_folio
+     0.00%  llama-bench  [kernel.kallsyms]       [k] update_sg_lb_stats
+     0.00%  llama-bench  libc.so.6               [.] malloc
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a18d6
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a2761
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a29ad
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6900
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6904
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6a07
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6c17
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a717a
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001ae8e5
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001b217c
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_mul@plt
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207d1
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] gguf_kv_to_str[abi:cxx11](gguf_context const*, int)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_vocab::impl::token_to_piece(int, char*, int, int, bool) const
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_vocab::~llama_vocab()
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::_Hashtable<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::pair<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > const, int>, std::allocator<std::pair<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > const, int> >, std::__detail::_Select1st, std::equal_to<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, llama_vocab::impl::pair_hash, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_rehash(unsigned long, unsigned long const&)
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007add4
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae75
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007afa4
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b779
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b77d
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b8db
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b908
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] memcmp@plt
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __bitmap_and
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __memcpy
+     0.00%  llama-bench  [kernel.kallsyms]       [k] alloc_anon_folio
+     0.00%  llama-bench  [kernel.kallsyms]       [k] alloc_misplaced_dst_folio
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_copy
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_mark_dirty
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_migrate_ksm
+     0.00%  llama-bench  [kernel.kallsyms]       [k] follow_page_pte
+     0.00%  llama-bench  [kernel.kallsyms]       [k] follow_pmd_mask.isra.0
+     0.00%  llama-bench  [kernel.kallsyms]       [k] futex_unqueue
+     0.00%  llama-bench  [kernel.kallsyms]       [k] futex_wait_queue
+     0.00%  llama-bench  [kernel.kallsyms]       [k] handle_softirqs
+     0.00%  llama-bench  [kernel.kallsyms]       [k] io_schedule
+     0.00%  llama-bench  [kernel.kallsyms]       [k] load_balance
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mem_cgroup_handle_over_high
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mm_counter
+     0.00%  llama-bench  [kernel.kallsyms]       [k] p4d_offset
+     0.00%  llama-bench  [kernel.kallsyms]       [k] p4d_offset
+     0.00%  llama-bench  [kernel.kallsyms]       [k] pte_val
+     0.00%  llama-bench  [kernel.kallsyms]       [k] rmap_walk
+     0.00%  llama-bench  [kernel.kallsyms]       [k] schedule
+     0.00%  llama-bench  [kernel.kallsyms]       [k] set_pte_range
+     0.00%  llama-bench  [kernel.kallsyms]       [k] task_work_run
+     0.00%  llama-bench  [kernel.kallsyms]       [k] try_grab_folio
+     0.00%  llama-bench  [kernel.kallsyms]       [k] update_sd_lb_stats.constprop.0
+     0.00%  llama-bench  [kernel.kallsyms]       [k] xas_descend
+     0.00%  llama-bench  ld-linux-x86-64.so.2    [.] 0x000000000000c162
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a1846
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69ef
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6a0f
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001ae8f4
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001b5ca4
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] gguf_get_n_kv
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] logf@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_are_same_shape@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_glu@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_cpu_extra_work_size
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_cpu_extra_work_size@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_is_contiguous_rows@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_is_numa
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_nelements@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_vec_soft_max_f32@plt
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207ad
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000002085d
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000208ea
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_hparams::n_embd_head_v(unsigned int) const
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_kv_cache::apply_ubatch(llama_kv_cache::slot_info const&, llama_ubatch const&)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::clear()
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::__detail::_Map_base<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true>, true>::operator[](std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] unicode_cpt_flags_from_cpt(unsigned int)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char const*>(char const*, char const*, std::forward_iterator_tag) [clone .isra.0]
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae39
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae3e
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae47
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007af51
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007af80
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007afb6
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007afd1
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007afd9
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b02e
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b795
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b80b
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b913
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b94e
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b953
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b988
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] memcpy@plt
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::compare(char const*) const
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::ostream::sentry::sentry(std::ostream&)
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] strlen@plt
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __anon_vma_interval_tree_subtree_search
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __folio_put
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __mem_cgroup_uncharge
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __mem_cgroup_uncharge_list
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __msecs_to_jiffies
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __raw_spin_unlock_irq
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __run_timers
+     0.00%  llama-bench  [kernel.kallsyms]       [k] __schedule
+     0.00%  llama-bench  [kernel.kallsyms]       [k] arch_tlbbatch_flush
+     0.00%  llama-bench  [kernel.kallsyms]       [k] do_read_fault
+     0.00%  llama-bench  [kernel.kallsyms]       [k] down_write_killable
+     0.00%  llama-bench  [kernel.kallsyms]       [k] filemap_map_pmd
+     0.00%  llama-bench  [kernel.kallsyms]       [k] finish_wait
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_add_lru_vma
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_anon_vma
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_lruvec_lock_irqsave
+     0.00%  llama-bench  [kernel.kallsyms]       [k] folio_migrate_mapping
+     0.00%  llama-bench  [kernel.kallsyms]       [k] follow_page_mask
+     0.00%  llama-bench  [kernel.kallsyms]       [k] free_pages_and_swap_cache
+     0.00%  llama-bench  [kernel.kallsyms]       [k] free_unref_page_commit
+     0.00%  llama-bench  [kernel.kallsyms]       [k] inherit_event.constprop.0
+     0.00%  llama-bench  [kernel.kallsyms]       [k] kmem_cache_alloc_node
+     0.00%  llama-bench  [kernel.kallsyms]       [k] lruvec_stat_mod_folio.constprop.0
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mark_page_accessed
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mas_wr_node_store
+     0.00%  llama-bench  [kernel.kallsyms]       [k] migrate_folio_extra
+     0.00%  llama-bench  [kernel.kallsyms]       [k] migration_entry_wait
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mksaveddirty_shift
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mm_counter_file
+     0.00%  llama-bench  [kernel.kallsyms]       [k] mod_memcg_state
+     0.00%  llama-bench  [kernel.kallsyms]       [k] move_to_new_folio
+     0.00%  llama-bench  [kernel.kallsyms]       [k] native_flush_tlb_multi
+     0.00%  llama-bench  [kernel.kallsyms]       [k] note_gp_changes
+     0.00%  llama-bench  [kernel.kallsyms]       [k] page_to_pgoff
+     0.00%  llama-bench  [kernel.kallsyms]       [k] pgd_none
+     0.00%  llama-bench  [kernel.kallsyms]       [k] propagate_protected_usage
+     0.00%  llama-bench  [kernel.kallsyms]       [k] refill_stock
+     0.00%  llama-bench  [kernel.kallsyms]       [k] rseq_get_rseq_cs
+     0.00%  llama-bench  [kernel.kallsyms]       [k] run_rebalance_domains
+     0.00%  llama-bench  [kernel.kallsyms]       [k] sched_mm_cid_before_execve
+     0.00%  llama-bench  [kernel.kallsyms]       [k] set_ptes.constprop.0
+     0.00%  llama-bench  [kernel.kallsyms]       [k] should_fail_alloc_page
+     0.00%  llama-bench  [kernel.kallsyms]       [k] should_numa_migrate_memory
+     0.00%  llama-bench  [kernel.kallsyms]       [k] should_we_balance
+     0.00%  llama-bench  [kernel.kallsyms]       [k] syscall_exit_to_user_mode
+     0.00%  llama-bench  [kernel.kallsyms]       [k] tlb_finish_mmu
+     0.00%  llama-bench  [kernel.kallsyms]       [k] try_to_migrate
+     0.00%  llama-bench  [kernel.kallsyms]       [k] update_sd_pick_busiest
+     0.00%  llama-bench  [kernel.kallsyms]       [k] vfs_read
+     0.00%  llama-bench  [kernel.kallsyms]       [k] wake_q_add_safe
+     0.00%  llama-bench  [kernel.kallsyms]       [k] xas_move_index
+     0.00%  llama-bench  ld-linux-x86-64.so.2    [.] 0x000000000000b791
+     0.00%  llama-bench  ld-linux-x86-64.so.2    [.] 0x00000000000114bf
+     0.00%  llama-bench  libc.so.6               [.] pthread_self
+     0.00%  llama-bench  libc.so.6               [.] 0x0000000000062c48
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000750cc
+     0.00%  llama-bench  libc.so.6               [.] 0x0000000000075243
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000762a3
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000914a3
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a1729
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a1753
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a18a2
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a18bf
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a18f2
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a26a0
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a274b
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a277d
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a39b0
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a3cfd
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a3e85
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a4278
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000000a43f7
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6884
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a688d
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a68f3
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a690e
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a6996
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69e1
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69f7
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001a69ff
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001ae8e9
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001ae8f8
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001ae8fc
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001b18db
+     0.00%  llama-bench  libc.so.6               [.] 0x00000000001b5cf0
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] bool gguf_read_emplace_helper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >(gguf_reader const&, std::vector<gguf_kv, std::allocator<gguf_kv> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool, unsigned long)
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_backend_sched_split_graph
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_backend_tensor_get
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_hash_find_or_insert
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_is_contiguous_0@plt
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] ggml_visit_parents_graph
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] memcpy@plt
+     0.00%  llama-bench  libggml-base.so.0.9.11  [.] void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*>(char*, char*, std::forward_iterator_tag) [clone .isra.0]
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_backend_amx_desired_wsize(ggml_tensor const*)
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_backend_cpu_repack_buffer_type()@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_add@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_add_non_quantized@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_mul_mat@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_rms_norm@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_compute_forward_soft_max@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_cpu_init
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_graph_compute
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_graph_plan
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] ggml_nrows@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] log2@plt
+     0.00%  llama-bench  libggml-cpu.so.0.9.11   [.] syscall@plt
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] omp_get_thread_num
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000001dbe0
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000001e496
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000001e4d6
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x000000000001e56d
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020611
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020613
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207c1
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207de
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x00000000000207e1
+     0.00%  llama-bench  libgomp.so.1.0.0        [.] 0x0000000000020862
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_context::decode(llama_batch const&)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_hparams::n_head_kv(unsigned int) const
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_kv_cache::init_batch(llama_batch_allocr&, unsigned int, bool)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_kv_cache::prepare(std::vector<llama_ubatch, std::allocator<llama_ubatch> > const&)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_kv_cache::set_input_k_idxs(ggml_tensor*, llama_ubatch const*, llama_kv_cache::slot_info const&) const
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_kv_cache::set_input_v_idxs(ggml_tensor*, llama_ubatch const*, llama_kv_cache::slot_info const&) const
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llama_kv_cache_context::~llama_kv_cache_context()
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] llm_graph_input_attn_kv::set_input(llama_ubatch const*)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] memcmp@plt
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] memcpy@plt
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::find(char const*, unsigned long, unsigned long) const@plt
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::resize(unsigned long, char)@plt
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] std::vector<std::vector<unsigned int, std::allocator<unsigned int> >, std::allocator<std::vector<unsigned int, std::allocator<unsigned int> > > >::_M_default_append(unsigned long)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] unicode_cpt_to_utf8[abi:cxx11](unsigned int)
+     0.00%  llama-bench  libllama.so.0.0.8782    [.] void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*>(char*, char*, std::forward_iterator_tag) [clone .isra.0]
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007add8
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae13
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae2a
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae5f
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae63
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007ae70
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007aef4
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007aef8
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007af0d
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007afbb
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007aff0
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007affa
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b020
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b032
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b160
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b20d
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b7b8
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b7c1
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b88b
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b8a6
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b8bf
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b8d2
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b8d7
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b8f0
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b94a
+     0.00%  llama-bench  libm.so.6               [.] 0x000000000007b992
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] free@plt
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] malloc@plt
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] operator delete(void*)
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::_Rb_tree_rebalance_for_erase(std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace_aux(unsigned long, unsigned long, unsigned long, char)
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::reserve(unsigned long)
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::basic_streambuf<char, std::char_traits<char> >::xsputn(char const*, long)
+     0.00%  llama-bench  libstdc++.so.6.0.30     [.] std::ostream::sentry::sentry(std::ostream&)@plt
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

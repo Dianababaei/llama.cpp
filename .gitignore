@@ -145,3 +145,7 @@ poetry.toml
 /.windsurf/
 # emscripten
 a.out.*
+results/perf.data
+results/perf_stacks.txt
+results/perf_stacks.txt
+results/perf.data
