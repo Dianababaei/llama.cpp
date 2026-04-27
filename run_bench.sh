@@ -14,6 +14,8 @@ mkdir -p "$RESULTS_DIR"
 echo "=== [1/4] Building ==="
 cmake -B "$BUILD_DIR" "$REPO_DIR" \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_FLAGS='-march=native -O3' \
+  -DCMAKE_C_FLAGS='-march=native -O3' \
   -DLLAMA_PERF=ON \
   -DGGML_PERF=ON
 cmake --build "$BUILD_DIR" --config Release -j"$(nproc)" \
