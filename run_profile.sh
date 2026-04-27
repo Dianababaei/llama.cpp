@@ -1,7 +1,24 @@
 #!/usr/bin/env bash
-# Usage: ./run_profile.sh [-t <threads>] /path/to/model.gguf
+# Usage: ./run_profile.sh [-t <threads>] [/path/to/model.gguf]
 # Profiles llama-bench with perf (Linux) and saves call graph + flamegraph data.
 # Requires: perf, and optionally flamegraph (https://github.com/brendangregg/FlameGraph)
+#
+# Baseline run: ./run_profile.sh -t 96
+# (optimal thread count = 96 = nproc, from baseline bench sweep)
+#
+# Baseline perf profile top 10 symbols (Qwen2.5-7B Q4_K_M, t=96):
+#   1. 33.87%  libgomp     spin-loop (thread synchronisation overhead)
+#   2. 19.51%  tinygemm_kernel_vnni<..., block_q4_K, ..., 64, 256>
+#   3. 11.81%  tinygemm_kernel_amx<..., block_q4_K, ..., 256, 0>
+#   4.  8.00%  tinygemm_kernel_vnni<..., block_q6_K, ..., 64, 256>
+#   5.  5.11%  libgomp     spin-loop (offset 0x207be)
+#   6.  4.63%  libgomp     spin-loop (offset 0x207c6)
+#   7.  2.62%  tinygemm_kernel_amx<..., block_q6_K, ..., 256, 0>
+#   8.  2.21%  tinyBLAS::gemm_bloc<4,6>  (FP16 matmul fallback)
+#   9.  1.98%  libgomp     spin-loop (offset 0x208ef)
+#  10.  1.41%  ggml_cpu_fp32_to_fp16
+# Total libgomp overhead: ~46% — confirms multi-threaded execution captured.
+# AMX/VNNI matmul kernels: ~42% — dominant compute.
 
 set -e
 
@@ -24,7 +41,7 @@ while getopts ":t:" opt; do
 done
 shift $((OPTIND - 1))
 
-MODEL=${1:?Usage: $0 [-t <threads>] /path/to/model.gguf}
+MODEL=${1:-/home/ubuntu/diana/models/llama/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf}
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$REPO_DIR/build"
 RESULTS_DIR="$(dirname "$0")/results"
