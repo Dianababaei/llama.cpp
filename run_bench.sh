@@ -28,7 +28,7 @@ echo "=== [2/4] System info ==="
   uname -a
 } > "$RESULTS_DIR/system_info.txt"
 
-echo "=== [3/4] llama-bench (prompt sizes x gen lengths x ubatch x kv-cache types) ==="
+echo "=== [3/4] llama-bench (prompt sizes x gen lengths x ubatch x kv-cache types x flash-attn) ==="
 
 # --- NUMA pinning & OpenMP tuning ---
 # numactl --localalloc keeps memory allocations on the local NUMA node,
@@ -46,6 +46,8 @@ export OMP_WAIT_POLICY=passive   # yield-wait instead of spin-wait
 export OMP_PROC_BIND=close       # group threads on nearby cores for cache locality
 export OMP_PLACES=cores          # one OpenMP thread per physical core
 
+# Run 1: full KV-type sweep with flash-attn disabled (q8_0 KV is not
+# compatible with flash attention, so we keep fa=0 here).
 "${NUMACTL_PREFIX[@]}" "$BUILD_DIR/bin/llama-bench" \
   -m "$MODEL" \
   -p 128,512,1024,2048 \
@@ -54,11 +56,32 @@ export OMP_PLACES=cores          # one OpenMP thread per physical core
   -ub 128,256,512,1024 \
   --cache-type-k q8_0,f16 \
   --cache-type-v q8_0,f16 \
+  --flash-attn 0 \
   -t 1,8,16,32,"$(nproc)" \
   -r 5 \
   -o json \
   -oe sql \
   > "$RESULTS_DIR/llama_bench.json" \
+  2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
+
+# Run 2: flash-attn sweep (0 vs 1) restricted to f16 KV cache.
+# Flash attention is incompatible with quantised KV types (e.g. q8_0),
+# so we only sweep fa here with f16 KV to avoid runtime errors.
+echo "  Running flash-attn sweep (f16 KV only) ..."
+"${NUMACTL_PREFIX[@]}" "$BUILD_DIR/bin/llama-bench" \
+  -m "$MODEL" \
+  -p 128,512,1024,2048 \
+  -n 128 \
+  -b 512,2048 \
+  -ub 128,256,512,1024 \
+  --cache-type-k f16 \
+  --cache-type-v f16 \
+  --flash-attn 1 \
+  -t 1,8,16,32,"$(nproc)" \
+  -r 5 \
+  -o json \
+  -oe sql \
+  >> "$RESULTS_DIR/llama_bench.json" \
   2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
 
 # Clean up OpenMP overrides so they don't leak into subsequent commands
