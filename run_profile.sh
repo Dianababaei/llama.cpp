@@ -1,11 +1,30 @@
 #!/usr/bin/env bash
-# Usage: ./run_profile.sh /path/to/model.gguf
+# Usage: ./run_profile.sh [-t <threads>] /path/to/model.gguf
 # Profiles llama-bench with perf (Linux) and saves call graph + flamegraph data.
 # Requires: perf, and optionally flamegraph (https://github.com/brendangregg/FlameGraph)
 
 set -e
 
-MODEL=${1:?Usage: $0 /path/to/model.gguf}
+# --- Parse optional flags ------------------------------------------------- #
+THREADS=""
+while getopts ":t:" opt; do
+  case $opt in
+    t) THREADS="$OPTARG" ;;
+    \?)
+      echo "Error: unrecognised option -$OPTARG" >&2
+      echo "Usage: $0 [-t <threads>] /path/to/model.gguf" >&2
+      exit 1
+      ;;
+    :)
+      echo "Error: option -$OPTARG requires an argument" >&2
+      echo "Usage: $0 [-t <threads>] /path/to/model.gguf" >&2
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+MODEL=${1:?Usage: $0 [-t <threads>] /path/to/model.gguf}
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$REPO_DIR/build"
 RESULTS_DIR="$(dirname "$0")/results"
@@ -29,7 +48,8 @@ sudo perf record \
        -m "$MODEL" \
        -p 512 \
        -n 128 \
-       -r 3
+       -r 3 \
+       ${THREADS:+-t $THREADS}
 
 echo "=== [3/3] Generating reports ==="
 
