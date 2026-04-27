@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Usage: ./run_bench.sh /path/to/model.gguf
-# Builds llama.cpp, runs llama-bench + batched-bench, saves JSON results.
+# Usage: ./run_bench.sh [/path/to/model.gguf]
+# Builds llama.cpp, runs llama-bench + batched-bench, saves JSON + SQLite results.
+# Default model: Llama 3.1-8B-Instruct Q4_K_M
 
 set -e
 
-MODEL=${1:?Usage: $0 /path/to/model.gguf}
+MODEL=${1:-/home/ubuntu/diana/models/llama/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf}
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$REPO_DIR/build"
 RESULTS_DIR="$REPO_DIR/results"
