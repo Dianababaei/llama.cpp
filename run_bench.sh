@@ -28,12 +28,15 @@ echo "=== [2/4] System info ==="
   uname -a
 } > "$RESULTS_DIR/system_info.txt"
 
-echo "=== [3/4] llama-bench (prompt sizes x gen lengths) ==="
+echo "=== [3/4] llama-bench (prompt sizes x gen lengths x ubatch x kv-cache types) ==="
 "$BUILD_DIR/bin/llama-bench" \
   -m "$MODEL" \
   -p 128,512,1024,2048 \
   -n 128 \
   -b 512,2048 \
+  -ub 128,256,512,1024 \
+  --cache-type-k q8_0,f16 \
+  --cache-type-v q8_0,f16 \
   -t 1,8,16,32,"$(nproc)" \
   -r 5 \
   -o json \
