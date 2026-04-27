@@ -29,7 +29,24 @@ echo "=== [2/4] System info ==="
 } > "$RESULTS_DIR/system_info.txt"
 
 echo "=== [3/4] llama-bench (prompt sizes x gen lengths x ubatch x kv-cache types) ==="
-"$BUILD_DIR/bin/llama-bench" \
+
+# --- NUMA pinning & OpenMP tuning ---
+# numactl --localalloc keeps memory allocations on the local NUMA node,
+# reducing cross-socket latency on multi-socket Xeon systems.
+NUMACTL_PREFIX=()
+if command -v numactl &>/dev/null; then
+  NUMACTL_PREFIX=(numactl --localalloc)
+  echo "  numactl found — enabling --localalloc"
+else
+  echo "  WARNING: numactl not found; skipping NUMA pinning (install with: apt install numactl)"
+fi
+
+# OpenMP env vars reduce the 33.87% libgomp spin-wait overhead observed in profiling.
+export OMP_WAIT_POLICY=passive   # yield-wait instead of spin-wait
+export OMP_PROC_BIND=close       # group threads on nearby cores for cache locality
+export OMP_PLACES=cores          # one OpenMP thread per physical core
+
+"${NUMACTL_PREFIX[@]}" "$BUILD_DIR/bin/llama-bench" \
   -m "$MODEL" \
   -p 128,512,1024,2048 \
   -n 128 \
@@ -43,6 +60,11 @@ echo "=== [3/4] llama-bench (prompt sizes x gen lengths x ubatch x kv-cache type
   -oe sql \
   > "$RESULTS_DIR/llama_bench.json" \
   2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
+
+# Clean up OpenMP overrides so they don't leak into subsequent commands
+unset OMP_WAIT_POLICY
+unset OMP_PROC_BIND
+unset OMP_PLACES
 
 echo "=== [4/4] batched-bench (parallelism scaling) ==="
 "$BUILD_DIR/bin/llama-batched-bench" \
