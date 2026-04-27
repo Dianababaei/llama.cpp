@@ -36,7 +36,9 @@ echo "=== [3/4] llama-bench (prompt sizes x gen lengths) ==="
   -t 1,8,16,32,"$(nproc)" \
   -r 5 \
   -o json \
-  > "$RESULTS_DIR/llama_bench.json"
+  -oe sql \
+  > "$RESULTS_DIR/llama_bench.json" \
+  2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
 
 echo "=== [4/4] batched-bench (parallelism scaling) ==="
 "$BUILD_DIR/bin/llama-batched-bench" \
@@ -50,6 +52,7 @@ echo "=== [4/4] batched-bench (parallelism scaling) ==="
 
 echo ""
 echo "Results saved to $RESULTS_DIR/"
-echo "  llama_bench.json   — t/s across prompt sizes, batch sizes, thread counts"
-echo "  batched_bench.txt  — t/s vs parallel sequences (KV-cache/scheduling pressure)"
-echo "  system_info.txt    — hardware context"
+echo "  llama_bench.json    — t/s across prompt sizes, batch sizes, thread counts"
+echo "  llama_bench.sqlite  — same data in SQLite for compare-llama-bench.py"
+echo "  batched_bench.txt   — t/s vs parallel sequences (KV-cache/scheduling pressure)"
+echo "  system_info.txt     — hardware context"
