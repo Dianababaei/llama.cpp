@@ -34,3 +34,38 @@ Hardware: Intel Xeon Platinum 8581C (96 vCPUs) — same machine used for profile
 - For profiling (next task), t=96 is also the most informative thread count since
   it is where threading overhead (libgomp spin-wait, synchronization) becomes
   most visible in `perf` callgraphs.
+
+## Profiler Run
+
+**Command:**
+```bash
+./run_profile.sh -t 96 /home/ubuntu/diana/models/llama/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+```
+
+**OPTIMAL_THREADS used:** 96
+
+### Top Hotspots (from `results/perf_flat.txt`)
+
+| Overhead | Library               | Symbol                                      |
+|----------|-----------------------|----------------------------------------------|
+| 33.87%   | libgomp.so            | spin-wait loop (thread synchronisation)      |
+| 19.51%   | libggml-cpu.so        | `tinygemm_kernel_vnni` (Q4_K)                |
+| 11.81%   | libggml-cpu.so        | `tinygemm_kernel_amx` (Q4_K)                 |
+|  8.00%   | libggml-cpu.so        | `tinygemm_kernel_vnni` (Q6_K)                |
+|  5.11%   | libgomp.so            | spin-wait loop                               |
+|  4.63%   | libgomp.so            | spin-wait loop                               |
+|  2.62%   | libggml-cpu.so        | `tinygemm_kernel_amx` (Q6_K)                 |
+|  2.21%   | libggml-cpu.so        | `tinyBLAS::gemm_bloc<4,6>`                   |
+|  1.98%   | libgomp.so            | spin-wait loop                               |
+|  1.41%   | libggml-cpu.so        | `ggml_cpu_fp32_to_fp16`                      |
+
+### Key Observations
+
+- **~46% libgomp spin-wait**: At t=96, the majority of CPU time is spent in
+  OpenMP thread synchronisation barriers — expected on a 96-vCPU machine where
+  not all threads have useful work every scheduling round.
+- **~42% GEMM kernels**: The actual compute is dominated by AMX/VNNI tinygemm
+  kernels for Q4_K and Q6_K quantisation formats, called via
+  `ggml_backend_amx_mul_mat`.
+- **tinyBLAS + fp16 conversion** account for ~3.6% — secondary hot paths for
+  smaller matmuls and type conversion.
