@@ -1,3 +1,9 @@
+# Profiler run: ./run_profile.sh -t 32 /home/ubuntu/diana/models/llama/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+# OPTIMAL_THREADS=32  (peak tg avg_ts=10.87 t/s at t=32; t=96 regresses to 9.83 t/s)
+# Model:  Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+# Host:   INTEL(R) XEON(R) PLATINUM 8581C @ 2.30GHz  (96 logical CPUs, CPU-only)
+# Date:   2026-04-23
+#
 # To display the perf.data header info, please use --header/--header-only options.
 #
 #
