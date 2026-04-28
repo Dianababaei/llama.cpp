@@ -10,11 +10,18 @@ BUILD_DIR="$REPO_DIR/build"
 RESULTS_DIR="$REPO_DIR/results"
 mkdir -p "$RESULTS_DIR"
 
+echo "=== [0/4] Committing script before build (bakes new hash into binary) ==="
+git -C "$REPO_DIR" add run_bench.sh
+git -C "$REPO_DIR" commit -m "perf: enable -march=native -O3 for Xeon 8581C optimisation" \
+  --allow-empty || true
+
 echo "=== [1/4] Building ==="
 cmake -B "$BUILD_DIR" "$REPO_DIR" \
   -DCMAKE_BUILD_TYPE=Release \
   -DLLAMA_PERF=ON \
-  -DGGML_PERF=ON
+  -DGGML_PERF=ON \
+  -DCMAKE_CXX_FLAGS='-march=native -O3' \
+  -DCMAKE_C_FLAGS='-march=native -O3'
 cmake --build "$BUILD_DIR" --config Release -j"$(nproc)" \
   --target llama-bench llama-batched-bench
 
