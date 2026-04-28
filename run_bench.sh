@@ -14,7 +14,9 @@ echo "=== [1/4] Building ==="
 cmake -B "$BUILD_DIR" "$REPO_DIR" \
   -DCMAKE_BUILD_TYPE=Release \
   -DLLAMA_PERF=ON \
-  -DGGML_PERF=ON
+  -DGGML_PERF=ON \
+  -DCMAKE_CXX_FLAGS='-march=native -O3' \
+  -DCMAKE_C_FLAGS='-march=native -O3'
 cmake --build "$BUILD_DIR" --config Release -j"$(nproc)" \
   --target llama-bench llama-batched-bench
 
