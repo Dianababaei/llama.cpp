@@ -35,8 +35,9 @@ echo "=== [3/4] llama-bench (prompt sizes x gen lengths) ==="
   -b 512,2048 \
   -t 1,8,16,32,"$(nproc)" \
   -r 5 \
-  -o json \
-  > "$RESULTS_DIR/llama_bench.json"
+  -o json -oe sql \
+  > "$RESULTS_DIR/llama_bench.json" \
+  2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
 
 echo "=== [4/4] batched-bench (parallelism scaling) ==="
 "$BUILD_DIR/bin/llama-batched-bench" \
