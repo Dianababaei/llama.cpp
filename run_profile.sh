@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
-# Usage: ./run_profile.sh /path/to/model.gguf
+# Usage: ./run_profile.sh [-t N] /path/to/model.gguf
 # Profiles llama-bench with perf (Linux) and saves call graph + flamegraph data.
 # Requires: perf, and optionally flamegraph (https://github.com/brendangregg/FlameGraph)
 
 set -e
 
-MODEL=${1:?Usage: $0 /path/to/model.gguf}
+THREADS=''
+while getopts 't:' opt; do
+  case $opt in
+    t) THREADS="$OPTARG" ;;
+    *) echo "Usage: $0 [-t N] /path/to/model.gguf" >&2; exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+MODEL=${1:?'model path is required'}
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$REPO_DIR/build"
 RESULTS_DIR="$(dirname "$0")/results"
@@ -21,11 +29,14 @@ cmake --build "$BUILD_DIR" --config RelWithDebInfo -j"$(nproc)" \
   --target llama-bench
 
 echo "=== [2/3] perf record (prompt processing + generation) ==="
+THREAD_ARG=''
+[ -n "$THREADS" ] && THREAD_ARG="-t $THREADS"
 sudo perf record \
   -g \
   -F 999 \
   -o "$RESULTS_DIR/perf.data" \
   -- "$BUILD_DIR/bin/llama-bench" \
+       $THREAD_ARG \
        -m "$MODEL" \
        -p 512 \
        -n 128 \
