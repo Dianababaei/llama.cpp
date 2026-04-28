@@ -35,7 +35,7 @@ llama_model_loader: - type q4_K:  169 tensors
 llama_model_loader: - type q6_K:   29 tensors
 print_info: file format = GGUF V3 (latest)
 print_info: file type   = Q4_K - Medium
-print_info: file size   = 4.36 GiB (4.91 BPW)
+print_info: file size   = 4.36 GiB (4.91 BPW) 
 load: 0 unused tokens
 load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
 load: printing all EOG tokens:
