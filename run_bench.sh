@@ -31,6 +31,11 @@ echo "=== [3/4] llama-bench (prompt sizes x gen lengths) ==="
 export OMP_WAIT_POLICY=passive
 export OMP_PROC_BIND=close
 export OMP_PLACES=cores
+
+# Pass 1: KV-cache quantisation sweep (flash attention off by default).
+# -fa 1 is incompatible with quantised KV types, so this pass keeps the
+# q8_0 variants and omits the -fa flag entirely.
+echo "--- [3a] KV-quant sweep (ctk/ctv: f16,q8_0; fa=0) ---"
 numactl --localalloc \
   "$BUILD_DIR/bin/llama-bench" \
   -m "$MODEL" \
@@ -45,6 +50,26 @@ numactl --localalloc \
   -o json -oe sql \
   > "$RESULTS_DIR/llama_bench.json" \
   2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
+
+# Pass 2: Flash-attention sweep (fa 0 vs 1) with f16 KV only, since
+# fa=1 is incompatible with quantised KV cache types.
+echo "--- [3b] Flash-attention sweep (ctk/ctv: f16; fa=0,1) ---"
+numactl --localalloc \
+  "$BUILD_DIR/bin/llama-bench" \
+  -m "$MODEL" \
+  -p 128,512,1024,2048 \
+  -n 128 \
+  -b 512,2048 \
+  -ub 128,256,512,1024 \
+  -t 1,8,16,32,"$(nproc)" \
+  -ctk f16 \
+  -ctv f16 \
+  -fa 0,1 \
+  -r 5 \
+  -o json -oe sql \
+  >> "$RESULTS_DIR/llama_bench.json" \
+  2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
+
 unset OMP_WAIT_POLICY OMP_PROC_BIND OMP_PLACES
 
 echo "=== [4/4] batched-bench (parallelism scaling) ==="
