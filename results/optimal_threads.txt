@@ -1,0 +1,39 @@
+# Optimal Thread Count Analysis
+# Model:  Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+# Host:   INTEL(R) XEON(R) PLATINUM 8581C CPU @ 2.30GHz  (96 logical CPUs)
+# Run:    ./run_bench.sh  -p 128,512,1024,2048 -n 128 -b 512,2048 -t 1,8,16,32,96 -r 5
+# Date:   2026-04-23
+
+## Prompt-processing (pp) throughput — avg_ts averaged across all prompt sizes, best batch (b=2048)
+
+  n_threads |  avg_ts (t/s)  | notes
+  ----------|----------------|-------
+          1 |          20.20 |
+          8 |         101.00 |
+         16 |         172.25 |
+         32 |         273.25 |  ← strong scaling
+         96 |         306.75 |  marginal gain over t=32 (+12%), memory-bandwidth saturated
+
+## Token-generation (tg) throughput — avg_ts, b=2048
+
+  n_threads |  avg_ts (t/s)  | notes
+  ----------|----------------|-------
+          1 |           2.16 |
+          8 |           8.58 |
+         16 |          10.31 |
+         32 |          10.93 |  ← peak tg
+         96 |           9.87 |  regression vs t=32 (–0.96 t/s); cache/coherence overhead
+
+## Conclusion
+
+OPTIMAL_THREADS=32
+
+Rationale:
+- t=32 achieves the **highest token-generation rate** (10.93 t/s, +0.62 t/s over t=16).
+- t=32 delivers 273 t/s for prompt processing — only 12% behind t=96 but with
+  significantly lower latency variance and TG regression avoided entirely.
+- t=96 improves PP by ~12% but regresses TG by ~10%; t=32 is the balanced
+  optimum for mixed workloads (prompt + decode).
+
+This value is consumed by the next subtask:
+  ./run_profile.sh -t 32 /home/ubuntu/diana/models/llama/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
