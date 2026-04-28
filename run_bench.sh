@@ -28,7 +28,11 @@ echo "=== [2/4] System info ==="
 } > "$RESULTS_DIR/system_info.txt"
 
 echo "=== [3/4] llama-bench (prompt sizes x gen lengths) ==="
-"$BUILD_DIR/bin/llama-bench" \
+export OMP_WAIT_POLICY=passive
+export OMP_PROC_BIND=close
+export OMP_PLACES=cores
+numactl --localalloc \
+  "$BUILD_DIR/bin/llama-bench" \
   -m "$MODEL" \
   -p 128,512,1024,2048 \
   -n 128 \
@@ -41,6 +45,7 @@ echo "=== [3/4] llama-bench (prompt sizes x gen lengths) ==="
   -o json -oe sql \
   > "$RESULTS_DIR/llama_bench.json" \
   2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
+unset OMP_WAIT_POLICY OMP_PROC_BIND OMP_PLACES
 
 echo "=== [4/4] batched-bench (parallelism scaling) ==="
 "$BUILD_DIR/bin/llama-batched-bench" \
