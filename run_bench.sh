@@ -32,6 +32,8 @@ export OMP_WAIT_POLICY=passive
 export OMP_PROC_BIND=close
 export OMP_PLACES=cores
 
+# Invocation 1: KV quantisation sweep (flash attention off by default;
+#                -fa 1 is incompatible with quantised KV cache types)
 numactl --localalloc \
 "$BUILD_DIR/bin/llama-bench" \
   -m "$MODEL" \
@@ -45,6 +47,23 @@ numactl --localalloc \
   -r 5 \
   -o json -oe sql \
   > "$RESULTS_DIR/llama_bench.json" \
+  2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
+
+# Invocation 2: Flash attention sweep (f16 KV only to avoid -fa 1 + q8_0 clash)
+numactl --localalloc \
+"$BUILD_DIR/bin/llama-bench" \
+  -m "$MODEL" \
+  -p 128,512,1024,2048 \
+  -n 128 \
+  -b 512,2048 \
+  -ub 128,256,512,1024 \
+  -ctk f16 \
+  -ctv f16 \
+  -fa 0,1 \
+  -t 1,8,16,32,"$(nproc)" \
+  -r 5 \
+  -o json -oe sql \
+  >> "$RESULTS_DIR/llama_bench.json" \
   2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
 
 unset OMP_WAIT_POLICY OMP_PROC_BIND OMP_PLACES
