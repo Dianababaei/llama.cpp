@@ -33,6 +33,9 @@ echo "=== [3/4] llama-bench (prompt sizes x gen lengths) ==="
   -p 128,512,1024,2048 \
   -n 128 \
   -b 512,2048 \
+  -ub 128,256,512,1024 \
+  -ctk f16,q8_0 \
+  -ctv f16,q8_0 \
   -t 1,8,16,32,"$(nproc)" \
   -r 5 \
   -o json -oe sql \
