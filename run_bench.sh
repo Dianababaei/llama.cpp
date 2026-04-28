@@ -14,9 +14,7 @@ echo "=== [1/4] Building ==="
 cmake -B "$BUILD_DIR" "$REPO_DIR" \
   -DCMAKE_BUILD_TYPE=Release \
   -DLLAMA_PERF=ON \
-  -DGGML_PERF=ON \
-  -DCMAKE_CXX_FLAGS='-march=native -O3' \
-  -DCMAKE_C_FLAGS='-march=native -O3'
+  -DGGML_PERF=ON
 cmake --build "$BUILD_DIR" --config Release -j"$(nproc)" \
   --target llama-bench llama-batched-bench
 
@@ -30,45 +28,15 @@ echo "=== [2/4] System info ==="
 } > "$RESULTS_DIR/system_info.txt"
 
 echo "=== [3/4] llama-bench (prompt sizes x gen lengths) ==="
-export OMP_WAIT_POLICY=passive
-export OMP_PROC_BIND=close
-export OMP_PLACES=cores
-
-# Invocation 1: KV quantisation sweep (flash attention off by default;
-#                -fa 1 is incompatible with quantised KV cache types)
-numactl --localalloc \
 "$BUILD_DIR/bin/llama-bench" \
   -m "$MODEL" \
   -p 128,512,1024,2048 \
   -n 128 \
   -b 512,2048 \
-  -ub 128,256,512,1024 \
-  -ctk f16,q8_0 \
-  -ctv f16,q8_0 \
   -t 1,8,16,32,"$(nproc)" \
   -r 5 \
-  -o json -oe sql \
-  > "$RESULTS_DIR/llama_bench.json" \
-  2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
-
-# Invocation 2: Flash attention sweep (f16 KV only to avoid -fa 1 + q8_0 clash)
-numactl --localalloc \
-"$BUILD_DIR/bin/llama-bench" \
-  -m "$MODEL" \
-  -p 128,512,1024,2048 \
-  -n 128 \
-  -b 512,2048 \
-  -ub 128,256,512,1024 \
-  -ctk f16 \
-  -ctv f16 \
-  -fa 0,1 \
-  -t 1,8,16,32,"$(nproc)" \
-  -r 5 \
-  -o json -oe sql \
-  >> "$RESULTS_DIR/llama_bench.json" \
-  2> >(sqlite3 "$RESULTS_DIR/llama_bench.sqlite")
-
-unset OMP_WAIT_POLICY OMP_PROC_BIND OMP_PLACES
+  -o json \
+  > "$RESULTS_DIR/llama_bench.json"
 
 echo "=== [4/4] batched-bench (parallelism scaling) ==="
 "$BUILD_DIR/bin/llama-batched-bench" \
@@ -83,6 +51,5 @@ echo "=== [4/4] batched-bench (parallelism scaling) ==="
 echo ""
 echo "Results saved to $RESULTS_DIR/"
 echo "  llama_bench.json   — t/s across prompt sizes, batch sizes, thread counts"
-echo "  llama_bench.sqlite — same data in SQLite (for scripts/compare-llama-bench.py)"
 echo "  batched_bench.txt  — t/s vs parallel sequences (KV-cache/scheduling pressure)"
 echo "  system_info.txt    — hardware context"
