@@ -5620,8 +5620,14 @@ static void rope_yarn(
         // Get n-d magnitude scaling corrected for interpolation
         mscale *= 1.0f + 0.1f * logf(1.0f / freq_scale);
     }
-    *cos_theta = cosf(theta) * mscale;
-    *sin_theta = sinf(theta) * mscale;
+    float _cs, _sn;
+#if defined(__GLIBC__) || defined(__gnu_linux__)
+    sincosf(theta, &_sn, &_cs);
+#else
+    _cs = cosf(theta); _sn = sinf(theta);
+#endif
+    *cos_theta = _cs * mscale;
+    *sin_theta = _sn * mscale;
 }
 
 static void ggml_rope_cache_init(

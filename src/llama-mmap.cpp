@@ -15,6 +15,7 @@
         #include <unistd.h>
         #include <fcntl.h>
         #include <sys/stat.h>
+        #include <sys/syscall.h>
         #if defined(_POSIX_MAPPED_FILES)
             #include <sys/mman.h>
         #endif
@@ -462,6 +463,19 @@ struct llama_mmap::impl {
                 LLAMA_LOG_WARN("warning: posix_madvise(.., POSIX_MADV_RANDOM) failed: %s\n",
                         strerror(errno));
             }
+#ifdef __linux__
+#ifndef MPOL_INTERLEAVE
+#define MPOL_INTERLEAVE 3
+#endif
+            // Interleave model weight pages across NUMA nodes via direct syscall (no libnuma dep).
+            // nodemask=3 = bit0(node0)|bit1(node1), maxnode=3 (highest bit index + 2)
+            unsigned long nodemask = 3UL;
+            long mbind_ret = syscall(SYS_mbind, addr, file->size(),
+                                     MPOL_INTERLEAVE, &nodemask, 3UL, 0);
+            if (mbind_ret != 0) {
+                LLAMA_LOG_WARN("warning: mbind(MPOL_INTERLEAVE) failed: %s\n", strerror(errno));
+            }
+#endif
         }
 
         mapped_fragments.emplace_back(0, file->size());

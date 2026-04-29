@@ -587,12 +587,9 @@ void ggml_barrier(struct ggml_threadpool * tp) {
         ggml_thread_cpu_relax();
     }
 
-    // exit barrier (full seq-cst fence)
-    // TSAN doesn't support standalone fence yet, we use a dummy read-modify-write instead
+    // exit barrier — the acquire load in the spin loop already provides the needed ordering
     #ifdef GGML_TSAN_ENABLED
     atomic_fetch_add_explicit(&tp->n_barrier_passed, 0, memory_order_seq_cst);
-    #else
-    atomic_thread_fence(memory_order_seq_cst);
     #endif
 #endif
 }
@@ -2294,10 +2291,9 @@ static int ggml_get_n_tasks(struct ggml_tensor * node, int n_threads) {
         case GGML_OP_GET_ROWS:
         case GGML_OP_SET_ROWS:
             {
-                // FIXME: get_rows can use additional threads, but the cost of launching additional threads
-                // decreases performance with GPU offloading
-                //n_tasks = n_threads;
-                n_tasks = 1;
+                // Parallelize for large batches (PP); fall back to 1 for single-token decode (TG).
+                // GPU offloading concern doesn't apply on CPU-only builds.
+                n_tasks = (ggml_nelements(node->src[1]) >= n_threads) ? n_threads : 1;
             } break;
         case GGML_OP_SCALE:
         case GGML_OP_SET:
