@@ -1766,6 +1766,12 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const voi
     __m128 acc_m = _mm_setzero_ps();
 
    for (int i = 0; i < nb; ++i) {
+        // prefetch weights and activations 2 blocks ahead to hide DRAM latency
+        if (i + 2 < nb) {
+            __builtin_prefetch(x[i+2].qs,    0, 1);
+            __builtin_prefetch(y[i+2].qs,    0, 1);
+            __builtin_prefetch(y[i+2].qs+64, 0, 1);
+        }
 
         const float d = y[i].d * GGML_CPU_FP16_TO_FP32(x[i].d);
         const float dmin = -y[i].d * GGML_CPU_FP16_TO_FP32(x[i].dmin);
