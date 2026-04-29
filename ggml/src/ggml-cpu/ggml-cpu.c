@@ -570,20 +570,20 @@ void ggml_barrier(struct ggml_threadpool * tp) {
 #else
     int n_passed = atomic_load_explicit(&tp->n_barrier_passed, memory_order_relaxed);
 
-    // enter barrier — acq_rel suffices on x86 TSO; avoids full MFENCE on every thread
-    int n_barrier = atomic_fetch_add_explicit(&tp->n_barrier, 1, memory_order_acq_rel);
+    // enter barrier (full seq-cst fence)
+    int n_barrier = atomic_fetch_add_explicit(&tp->n_barrier, 1, memory_order_seq_cst);
 
     if (n_barrier == (n_threads - 1)) {
         // last thread
         atomic_store_explicit(&tp->n_barrier, 0, memory_order_relaxed);
 
-        // release barrier — all prior stores visible before waiters exit spin loop
-        atomic_fetch_add_explicit(&tp->n_barrier_passed, 1, memory_order_release);
+        // exit barrier (full seq-cst fence)
+        atomic_fetch_add_explicit(&tp->n_barrier_passed, 1, memory_order_seq_cst);
         return;
     }
 
-    // wait for other threads — acquire pairs with the release store in the last thread
-    while (atomic_load_explicit(&tp->n_barrier_passed, memory_order_acquire) == n_passed) {
+    // wait for other threads
+    while (atomic_load_explicit(&tp->n_barrier_passed, memory_order_relaxed) == n_passed) {
         ggml_thread_cpu_relax();
     }
 
