@@ -294,7 +294,168 @@ void ggml_quantize_mat_q8_K_4x8(const float * GGML_RESTRICT x, void * GGML_RESTR
 
     block_q8_Kx4 * GGML_RESTRICT y = (block_q8_Kx4 *) vy;
 
-#if defined(__AVX2__)
+#if defined(__AVX512F__) && defined(__AVX512BW__) && defined(__AVX512DQ__)
+    // AVX-512 path: process 16 floats per load (vs 8 in AVX2)
+    // Two-pass per block: pass1 finds max-abs, pass2 scales+packs
+    for (int i = 0; i < nb; i++) {
+        float iscale[4];
+
+        for (int row_iter = 0; row_iter < 4; row_iter++) {
+            const float * row = x + row_iter * k + i * QK_K;
+
+            // Pass 1: find max-abs and actual max across 256 floats using 16x __m512
+            const __m512 signbit = _mm512_set1_ps(-0.0f);
+            __m512 vabsmax = _mm512_setzero_ps();
+            __m512 vactmax = _mm512_set1_ps(-INFINITY);
+            for (int j = 0; j < QK_K / 16; j++) {
+                __m512 v = _mm512_loadu_ps(row + j * 16);
+                vabsmax = _mm512_max_ps(vabsmax, _mm512_andnot_ps(signbit, v));
+                vactmax = _mm512_max_ps(vactmax, v);
+            }
+            float maxAbs    = _mm512_reduce_max_ps(vabsmax);
+            float maxActual = _mm512_reduce_max_ps(vactmax);
+
+            if (maxAbs == 0.0f) {
+                iscale[row_iter] = 0.0f;
+                y[i].d[row_iter] = 0.0f;
+                continue;
+            }
+            // flip sign when max-magnitude element is negative (no positive element reaches maxAbs)
+            float is = (maxActual == maxAbs) ? (127.0f / maxAbs) : (-127.0f / maxAbs);
+            iscale[row_iter] = is;
+            y[i].d[row_iter] = 1.0f / is;
+        }
+
+        // Pass 2: scale, round, pack, interleave all 4 rows
+        // Process 16-element chunks (one __m512 per row per chunk)
+        // QK_K/16 = 16 chunks; pairs of chunks → 32 __m256i quants_interleaved entries
+        __m256i quants_interleaved[32];
+        const __m512 iscale_v[4] = {
+            _mm512_set1_ps(iscale[0]),
+            _mm512_set1_ps(iscale[1]),
+            _mm512_set1_ps(iscale[2]),
+            _mm512_set1_ps(iscale[3]),
+        };
+        for (int j = 0; j < QK_K / 16; j++) {
+            __m512i i0 = _mm512_cvt_roundps_epi32(_mm512_mul_ps(_mm512_loadu_ps(x + 0*k + i*QK_K + j*16), iscale_v[0]), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+            __m512i i1 = _mm512_cvt_roundps_epi32(_mm512_mul_ps(_mm512_loadu_ps(x + 1*k + i*QK_K + j*16), iscale_v[1]), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+            __m512i i2 = _mm512_cvt_roundps_epi32(_mm512_mul_ps(_mm512_loadu_ps(x + 2*k + i*QK_K + j*16), iscale_v[2]), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+            __m512i i3 = _mm512_cvt_roundps_epi32(_mm512_mul_ps(_mm512_loadu_ps(x + 3*k + i*QK_K + j*16), iscale_v[3]), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+
+            // Pack 4 rows: int32 → int16 → int8, interleaved by row
+            // packs instructions saturate: i32→i16 at ±32767, i16→i8 at ±127
+            // Each __m512i holds 16 int32; two __m512i → 32 int16 → 32 int8
+            // We need to produce one __m256i (32 bytes) with 8 quants from each row
+            // AVX-512 packs: _mm512_packs_epi32 packs pairs to int16 (saturating)
+            // then _mm512_packs_epi16 to int8 — but this interleaves lanes
+
+            // Extract lower and upper 256-bit halves and use existing AVX2 logic
+            __m256i a0l = _mm512_extracti32x8_epi32(i0, 0);
+            __m256i a0h = _mm512_extracti32x8_epi32(i0, 1);
+            __m256i a1l = _mm512_extracti32x8_epi32(i1, 0);
+            __m256i a1h = _mm512_extracti32x8_epi32(i1, 1);
+            __m256i a2l = _mm512_extracti32x8_epi32(i2, 0);
+            __m256i a2h = _mm512_extracti32x8_epi32(i2, 1);
+            __m256i a3l = _mm512_extracti32x8_epi32(i3, 0);
+            __m256i a3h = _mm512_extracti32x8_epi32(i3, 1);
+
+            // Pack int32→int16 within each row pair
+            __m256i r0l = _mm256_packs_epi32(a0l, a1l);  // row0[0-7],row1[0-7],row0[8-15],row1[8-15] (after permute)
+            __m256i r2l = _mm256_packs_epi32(a2l, a3l);
+            __m256i r0h = _mm256_packs_epi32(a0h, a1h);
+            __m256i r2h = _mm256_packs_epi32(a2h, a3h);
+
+            // Pack int16→int8
+            __m256i q_low  = _mm256_packs_epi16(r0l, r2l);
+            __m256i q_high = _mm256_packs_epi16(r0h, r2h);
+
+            // Fix interleaving: after packs, order is [r0[0-3],r1[0-3],r2[0-3],r3[0-3], r0[4-7],...] within each 128-bit lane
+            // We need [r0,r1,r2,r3] interleaved consistently for the bsums computation
+            const __m256i perm = _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7);
+            q_low  = _mm256_permutevar8x32_epi32(q_low,  perm);
+            q_high = _mm256_permutevar8x32_epi32(q_high, perm);
+
+            // Store: j*16 elements split into two groups of 8: j*2 and j*2+1
+            _mm256_storeu_si256((__m256i *)(y[i].qs + 32 * (j * 2)),     q_low);
+            _mm256_storeu_si256((__m256i *)(y[i].qs + 32 * (j * 2 + 1)), q_high);
+            quants_interleaved[j * 2]     = q_low;
+            quants_interleaved[j * 2 + 1] = q_high;
+        }
+
+        // Compute bsums using same logic as AVX2 path
+        __m256i shuffle_mask_sb2 = _mm256_castsi128_si256(_mm_setr_epi8(0, 1, 0, 1, 4, 5, 6, 7, 8, 9, 8, 9, 12, 13, 14, 15));
+        shuffle_mask_sb2 = _mm256_permute2f128_si256(shuffle_mask_sb2, shuffle_mask_sb2, 0);
+        __m256i shuffle_mask_sb3 = _mm256_castsi128_si256(_mm_setr_epi8(0, 1, 2, 3, 0, 1, 6, 7, 8, 9, 10, 11, 8, 9, 14, 15));
+        shuffle_mask_sb3 = _mm256_permute2f128_si256(shuffle_mask_sb3, shuffle_mask_sb3, 0);
+        __m256i shuffle_mask_sb4 = _mm256_castsi128_si256(_mm_setr_epi8(0, 1, 2, 3, 4, 5, 0, 1, 8, 9, 10, 11, 12, 13, 8, 9));
+        shuffle_mask_sb4 = _mm256_permute2f128_si256(shuffle_mask_sb4, shuffle_mask_sb4, 0);
+        __m256i one = _mm256_set1_epi8(1);
+
+        for (int kk = 0; kk < 4; kk++) {
+            __m256i q0 = quants_interleaved[kk * 8 + 0];
+            __m256i q1 = quants_interleaved[kk * 8 + 1];
+            __m256i q2 = quants_interleaved[kk * 8 + 2];
+            __m256i q3 = quants_interleaved[kk * 8 + 3];
+            __m256i q4 = quants_interleaved[kk * 8 + 4];
+            __m256i q5 = quants_interleaved[kk * 8 + 5];
+            __m256i q6 = quants_interleaved[kk * 8 + 6];
+            __m256i q7 = quants_interleaved[kk * 8 + 7];
+
+            __m256i sb2_h1_shuffled = _mm256_shuffle_epi8(q2, shuffle_mask_sb2);
+            __m256i sb_h1_interleaved = _mm256_blend_epi16(q0, sb2_h1_shuffled, 34);
+            __m256i sb3_h1_shuffled = _mm256_shuffle_epi8(q4, shuffle_mask_sb3);
+            sb_h1_interleaved = _mm256_blend_epi16(sb_h1_interleaved, sb3_h1_shuffled, 68);
+            __m256i sb4_h1_shuffled = _mm256_shuffle_epi8(q6, shuffle_mask_sb4);
+            sb_h1_interleaved = _mm256_blend_epi16(sb_h1_interleaved, sb4_h1_shuffled, 136);
+
+            __m256i bsums_r1 = _mm256_maddubs_epi16(one, sb_h1_interleaved);
+
+            for (int l = 0; l < 3; l++) {
+                q0 = _mm256_srli_epi64(q0, 16);
+                q2 = _mm256_srli_epi64(q2, 16);
+                q4 = _mm256_srli_epi64(q4, 16);
+                q6 = _mm256_srli_epi64(q6, 16);
+
+                sb2_h1_shuffled = _mm256_shuffle_epi8(q2, shuffle_mask_sb2);
+                sb_h1_interleaved = _mm256_blend_epi16(q0, sb2_h1_shuffled, 34);
+                sb3_h1_shuffled = _mm256_shuffle_epi8(q4, shuffle_mask_sb3);
+                sb_h1_interleaved = _mm256_blend_epi16(sb_h1_interleaved, sb3_h1_shuffled, 68);
+                sb4_h1_shuffled = _mm256_shuffle_epi8(q6, shuffle_mask_sb4);
+                sb_h1_interleaved = _mm256_blend_epi16(sb_h1_interleaved, sb4_h1_shuffled, 136);
+
+                bsums_r1 = _mm256_add_epi16(bsums_r1, _mm256_maddubs_epi16(one, sb_h1_interleaved));
+            }
+
+            __m256i sb2_h2_shuffled = _mm256_shuffle_epi8(q3, shuffle_mask_sb2);
+            __m256i sb_h2_interleaved = _mm256_blend_epi16(q1, sb2_h2_shuffled, 34);
+            __m256i sb3_h2_shuffled = _mm256_shuffle_epi8(q5, shuffle_mask_sb3);
+            sb_h2_interleaved = _mm256_blend_epi16(sb_h2_interleaved, sb3_h2_shuffled, 68);
+            __m256i sb4_h2_shuffled = _mm256_shuffle_epi8(q7, shuffle_mask_sb4);
+            sb_h2_interleaved = _mm256_blend_epi16(sb_h2_interleaved, sb4_h2_shuffled, 136);
+
+            __m256i bsums_r2 = _mm256_maddubs_epi16(one, sb_h2_interleaved);
+
+            for (int l = 0; l < 3; l++) {
+                q1 = _mm256_srli_epi64(q1, 16);
+                q3 = _mm256_srli_epi64(q3, 16);
+                q5 = _mm256_srli_epi64(q5, 16);
+                q7 = _mm256_srli_epi64(q7, 16);
+
+                sb2_h2_shuffled = _mm256_shuffle_epi8(q3, shuffle_mask_sb2);
+                sb_h2_interleaved = _mm256_blend_epi16(q1, sb2_h2_shuffled, 34);
+                sb3_h2_shuffled = _mm256_shuffle_epi8(q5, shuffle_mask_sb3);
+                sb_h2_interleaved = _mm256_blend_epi16(sb_h2_interleaved, sb3_h2_shuffled, 68);
+                sb4_h2_shuffled = _mm256_shuffle_epi8(q7, shuffle_mask_sb4);
+                sb_h2_interleaved = _mm256_blend_epi16(sb_h2_interleaved, sb4_h2_shuffled, 136);
+
+                bsums_r2 = _mm256_add_epi16(bsums_r2, _mm256_maddubs_epi16(one, sb_h2_interleaved));
+            }
+
+            _mm256_storeu_si256((__m256i *)(y[i].bsums + 16 * kk), _mm256_add_epi16(bsums_r1, bsums_r2));
+        }
+    }
+
+#elif defined(__AVX2__)
     float iscale[4];
     __m256 srcv[4][32];
     __m256 iscale_vec[4];
