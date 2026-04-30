@@ -1648,7 +1648,6 @@ void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const vo
     // AVX-512 GEMV path: process 16 weight columns per iteration (two block_q4_Kx8 structs)
     // using 512-bit registers, halving the number of loads vs AVX2.
     {
-        const __m512i m4b_512  = _mm512_set1_epi8(0x0F);
         const __m256i m4b_256  = _mm256_set1_epi8(0x0F);
         __m128i deltamask = _mm_set_epi8(15, 14, 7, 6, 13, 12, 5, 4, 11, 10, 3, 2, 9, 8, 1, 0);
         __m128i scalemask = _mm_set_epi8(7, 7, 3, 3, 6, 6, 2, 2, 5, 5, 1, 1, 4, 4, 0, 0);
