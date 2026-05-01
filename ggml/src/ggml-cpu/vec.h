@@ -1518,35 +1518,14 @@ inline static void ggml_vec_geglu_quick_f16(const int n, ggml_fp16_t * y, const 
 }
 
 inline static void ggml_vec_sum_f32(const int n, float * s, const float * x) {
-#if defined(GGML_USE_ACCELERATE)
-    vDSP_sve(x, 1, s, n);
-#elif defined(__AVX512F__)
-    __m512 acc = _mm512_setzero_ps();
-    int i = 0;
-    for (; i <= n - 16; i += 16) {
-        acc = _mm512_add_ps(acc, _mm512_loadu_ps(x + i));
-    }
-    float sum = _mm512_reduce_add_ps(acc);
-    for (; i < n; i++) sum += x[i];
-    *s = sum;
-#elif defined(__AVX2__)
-    __m256 acc = _mm256_setzero_ps();
-    int i = 0;
-    for (; i <= n - 8; i += 8) {
-        acc = _mm256_add_ps(acc, _mm256_loadu_ps(x + i));
-    }
-    __m128 t = _mm_add_ps(_mm256_castps256_ps128(acc), _mm256_extractf128_ps(acc, 1));
-    t = _mm_add_ps(t, _mm_movehl_ps(t, t));
-    t = _mm_add_ss(t, _mm_movehdup_ps(t));
-    float sum = _mm_cvtss_f32(t);
-    for (; i < n; i++) sum += x[i];
-    *s = sum;
-#else
+#ifndef GGML_USE_ACCELERATE
     ggml_float sum = 0.0;
     for (int i = 0; i < n; ++i) {
         sum += (ggml_float)x[i];
     }
     *s = (float)sum;
+#else
+    vDSP_sve(x, 1, s, n);
 #endif
 }
 
@@ -1585,35 +1564,14 @@ inline static void ggml_vec_sum_bf16_ggf(const int n, float * s, const ggml_bf16
 }
 
 inline static void ggml_vec_max_f32(const int n, float * s, const float * x) {
-#if defined(GGML_USE_ACCELERATE)
-    vDSP_maxv(x, 1, s, n);
-#elif defined(__AVX512F__)
-    __m512 acc = _mm512_set1_ps(-INFINITY);
-    int i = 0;
-    for (; i <= n - 16; i += 16) {
-        acc = _mm512_max_ps(acc, _mm512_loadu_ps(x + i));
-    }
-    float max = _mm512_reduce_max_ps(acc);
-    for (; i < n; i++) max = MAX(max, x[i]);
-    *s = max;
-#elif defined(__AVX2__)
-    __m256 acc = _mm256_set1_ps(-INFINITY);
-    int i = 0;
-    for (; i <= n - 8; i += 8) {
-        acc = _mm256_max_ps(acc, _mm256_loadu_ps(x + i));
-    }
-    __m128 t = _mm_max_ps(_mm256_castps256_ps128(acc), _mm256_extractf128_ps(acc, 1));
-    t = _mm_max_ps(t, _mm_movehl_ps(t, t));
-    t = _mm_max_ss(t, _mm_movehdup_ps(t));
-    float max = _mm_cvtss_f32(t);
-    for (; i < n; i++) max = MAX(max, x[i]);
-    *s = max;
-#else
+#ifndef GGML_USE_ACCELERATE
     float max = -INFINITY;
     for (int i = 0; i < n; ++i) {
         max = MAX(max, x[i]);
     }
     *s = max;
+#else
+    vDSP_maxv(x, 1, s, n);
 #endif
 }
 
