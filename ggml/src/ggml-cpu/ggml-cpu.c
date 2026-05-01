@@ -570,24 +570,23 @@ void ggml_barrier(struct ggml_threadpool * tp) {
 #else
     int n_passed = atomic_load_explicit(&tp->n_barrier_passed, memory_order_relaxed);
 
-    // enter barrier (full seq-cst fence)
-    int n_barrier = atomic_fetch_add_explicit(&tp->n_barrier, 1, memory_order_seq_cst);
+    // enter barrier — acq_rel is sufficient on x86-64 (TSO); seq_cst adds an MFENCE on every core
+    int n_barrier = atomic_fetch_add_explicit(&tp->n_barrier, 1, memory_order_acq_rel);
 
     if (n_barrier == (n_threads - 1)) {
         // last thread
         atomic_store_explicit(&tp->n_barrier, 0, memory_order_relaxed);
 
-        // exit barrier (full seq-cst fence)
-        atomic_fetch_add_explicit(&tp->n_barrier_passed, 1, memory_order_seq_cst);
+        // exit barrier — release store; waiters acquire via spin-load below
+        atomic_fetch_add_explicit(&tp->n_barrier_passed, 1, memory_order_release);
         return;
     }
 
-    // wait for other threads
-    while (atomic_load_explicit(&tp->n_barrier_passed, memory_order_relaxed) == n_passed) {
+    // wait for other threads — acquire pairs with the release store above
+    while (atomic_load_explicit(&tp->n_barrier_passed, memory_order_acquire) == n_passed) {
         ggml_thread_cpu_relax();
     }
 
-    // exit barrier — the acquire load in the spin loop already provides the needed ordering
     #ifdef GGML_TSAN_ENABLED
     atomic_fetch_add_explicit(&tp->n_barrier_passed, 0, memory_order_seq_cst);
     #endif
