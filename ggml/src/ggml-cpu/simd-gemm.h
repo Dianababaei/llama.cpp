@@ -36,10 +36,11 @@ static inline void simd_gemm_ukernel(
         }
     }
 
-    for (int64_t kk = 0; kk < K; kk++) {
+    const float * Brow = B;
+    for (int64_t kk = 0; kk < K; kk++, Brow += N) {
         GGML_F32_VEC Bv[RN];
         for (int r = 0; r < RN; r++) {
-            Bv[r] = GGML_F32_VEC_LOAD(B + kk * N + r * KN);
+            Bv[r] = GGML_F32_VEC_LOAD(Brow + r * KN);
         }
         for (int64_t i = 0; i < RM; i++) {
             GGML_F32_VEC p = GGML_F32_VEC_SET1(A[i * K + kk]);
@@ -77,8 +78,9 @@ static void simd_gemm(
         for (; jj < N; jj++) {
             for (int64_t i = 0; i < GEMM_RM; i++) {
                 float a = C[i * N + jj];
-                for (int64_t kk = 0; kk < K; kk++) {
-                    a += A[i + kk] * B[kk * N + jj];
+                const float * Bptr = B + jj;
+                for (int64_t kk = 0; kk < K; kk++, Bptr += N) {
+                    a += A[i * K + kk] * (*Bptr);
                 }
                 C[i * N + jj] = a;
             }
@@ -99,8 +101,9 @@ static void simd_gemm(
         }
         for (; jj < N; jj++) {
             float a = C[jj];
-            for (int64_t kk = 0; kk < K; kk++) {
-                a += A[kk] * B[kk * N + jj];
+            const float * Bptr = B + jj;
+            for (int64_t kk = 0; kk < K; kk++, Bptr += N) {
+                a += A[kk] * (*Bptr);
             }
             C[jj] = a;
         }

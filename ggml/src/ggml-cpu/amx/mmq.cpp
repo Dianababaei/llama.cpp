@@ -406,6 +406,8 @@ void quantize_row_q8_K_vnni(const float * RESTRICT x, void * RESTRICT vy, int64_
     __m512i vq_packed[kVecs / 4];
 
     const __m512 signBit = _mm512_set1_ps(-0.f);
+    // Hoisted: this constant is loop-invariant across all blocks.
+    const __m512i one = _mm512_set1_epi8(1);
 
     for (int i = 0; i < KB; ++i) {
         // Compute max(abs(e)) for the block
@@ -422,18 +424,15 @@ void quantize_row_q8_K_vnni(const float * RESTRICT x, void * RESTRICT vy, int64_
         const float id = ( amax != 0.0f ) ? iscale : 0.f;
         const __m512 vscale = _mm512_set1_ps(id);
 
-        // Apply multiplier and round to nearest integer
-        for (int j = 0; j < kVecs; ++j) {
-            v[j] = _mm512_mul_ps(v[j], vscale);
-            v[j] = _mm512_roundscale_ps(v[j], (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
-        }
-
-        // Pack to epi8 vecs
+        // Scale, round, and pack to epi8 vecs in a single fused pass.
+        // _mm512_cvt_roundps_epi32 with _MM_FROUND_TO_NEAREST_INT performs the
+        // multiply-then-round-to-nearest-int in one step, eliminating the
+        // separate _mm512_roundscale_ps loop that previously walked all kVecs.
         for (int j = 0; j < kVecs / 4; ++j) {
-            __m128i q8_0 = _mm512_cvtepi32_epi8(_mm512_cvtps_epi32(v[j * 4 + 0]));
-            __m128i q8_1 = _mm512_cvtepi32_epi8(_mm512_cvtps_epi32(v[j * 4 + 1]));
-            __m128i q8_2 = _mm512_cvtepi32_epi8(_mm512_cvtps_epi32(v[j * 4 + 2]));
-            __m128i q8_3 = _mm512_cvtepi32_epi8(_mm512_cvtps_epi32(v[j * 4 + 3]));
+            __m128i q8_0 = _mm512_cvtepi32_epi8(_mm512_cvt_roundps_epi32(_mm512_mul_ps(v[j * 4 + 0], vscale), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+            __m128i q8_1 = _mm512_cvtepi32_epi8(_mm512_cvt_roundps_epi32(_mm512_mul_ps(v[j * 4 + 1], vscale), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+            __m128i q8_2 = _mm512_cvtepi32_epi8(_mm512_cvt_roundps_epi32(_mm512_mul_ps(v[j * 4 + 2], vscale), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+            __m128i q8_3 = _mm512_cvtepi32_epi8(_mm512_cvt_roundps_epi32(_mm512_mul_ps(v[j * 4 + 3], vscale), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
 
             __m256i q8_01 = _mm256_insertf128_si256(_mm256_castsi128_si256(q8_0), (q8_1), 1);
             __m256i q8_23 = _mm256_insertf128_si256(_mm256_castsi128_si256(q8_2), (q8_3), 1);
@@ -445,7 +444,6 @@ void quantize_row_q8_K_vnni(const float * RESTRICT x, void * RESTRICT vy, int64_
         // Compute the bsums with vnni
         transpose_16x4_32bit(vq, vq_packed);
 
-        const __m512i one = _mm512_set1_epi8(1);
         __m512i sum = _mm512_setzero_si512();
         for (int k = 0; k < 4; ++k) {
             sum = _mm512_dpbusd_epi32(sum, one, vq_packed[k]);

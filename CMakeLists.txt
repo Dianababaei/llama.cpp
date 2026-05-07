@@ -14,6 +14,23 @@ endif()
 
 message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
+# Enable IPO/LTO for Release builds to allow cross-module inlining, dead-code
+# elimination, and constant propagation across translation-unit boundaries.
+# The CPU feature-detection objects (ggml/src/ggml-cpu/CMakeLists.txt) already
+# opt out via -fno-lto so that arch-specific instructions are not inlined before
+# the runtime feature check runs.  EMSCRIPTEN uses its own LTO pipeline and is
+# excluded here so that the standard CMake IPO path does not interfere with it.
+if (NOT EMSCRIPTEN)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+    if (ipo_supported)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+        message(STATUS "LTO enabled for Release builds")
+    else()
+        message(STATUS "LTO not supported: ${ipo_error}")
+    endif()
+endif()
+
 # Add path to modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
@@ -66,10 +83,8 @@ if (WIN32)
 endif()
 
 if (MSVC)
-    add_compile_options("$<$<COMPILE_LANGUAGE:C>:/utf-8>")
-    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/utf-8>")
-    add_compile_options("$<$<COMPILE_LANGUAGE:C>:/bigobj>")
-    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj>")
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:/utf-8;/bigobj>")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/utf-8;/bigobj>")
 endif()
 
 if (LLAMA_STANDALONE)
