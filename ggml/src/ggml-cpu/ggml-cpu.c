@@ -706,6 +706,10 @@ void ggml_numa_init(enum ggml_numa_strategy numa_flag) {
 #endif
 }
 
+bool ggml_is_numa(void) {
+    return g_state.numa.n_nodes > 1;
+}
+
 #if defined(__ARM_ARCH)
 #if defined(__aarch64__) && defined(__ARM_FEATURE_SVE)
 #include <arm_sve.h>
