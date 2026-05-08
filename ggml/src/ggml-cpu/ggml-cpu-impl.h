@@ -84,6 +84,11 @@ struct ggml_compute_params {
 #define ggml_vld1q_u32(w,x,y,z) { (w), (x), (y), (z) }
 #endif // _MSC_VER
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#define __builtin_prefetch(addr, rw, locality) _mm_prefetch((const char *)(addr), _MM_HINT_T0)
+#endif
+
 #if !defined(__aarch64__)
 
 // 32-bit ARM compatibility
