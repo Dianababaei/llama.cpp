@@ -475,6 +475,11 @@ struct llama_mmap::impl {
             if (mbind_ret != 0) {
                 LLAMA_LOG_WARN("warning: mbind(MPOL_INTERLEAVE) failed: %s\n", strerror(errno));
             }
+            // 2MB huge pages cut TLB entries for a 4.5GB model from ~1.15M to ~2250.
+            // khugepaged promotes pages asynchronously; effective within the first few inference calls.
+            if (madvise(addr, file->size(), MADV_HUGEPAGE) != 0) {
+                LLAMA_LOG_WARN("warning: madvise(MADV_HUGEPAGE) failed: %s\n", strerror(errno));
+            }
 #endif
         }
 

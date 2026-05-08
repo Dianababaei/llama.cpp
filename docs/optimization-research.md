@@ -19,6 +19,7 @@ These were listed as open in `bottleneck-analysis.md` but are **already applied*
 | Tile config caching | `ggml/src/ggml-cpu/amx/mmq.cpp:204–224` | ✓ **Already optimal** — `thread_local` guard |
 | ROPE parallelization | `ggml/src/ggml-cpu/ggml-cpu.c:2312–2316` | ✓ **Already optimal** — `n_tasks = n_threads` |
 | Flash attention dispatch | `ggml/src/ggml-cpu/ggml-cpu.c:2351` | ✓ **Parallelized** — `n_tasks = n_threads` |
+| MADV_HUGEPAGE for model weights | `src/llama-mmap.cpp:478–481` | ✓ **Applied** — after mbind, inside `#ifdef __linux__` |
 
 The bottleneck-analysis.md summary table is **out of date** — fixes #1 and #2 are done.
 
