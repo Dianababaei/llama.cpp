@@ -79,6 +79,70 @@ static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_co
     return fattn_mma_config(32, 1, 0, 0, 0, 0, 0, false);
 }
 
+static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_config_sm86(const int DKQ, const int DV, const int ncols) {
+    // Configs tuned for sm_86 (RTX 30x0 series) and later Ampere-class GPUs with 128 KB shared
+    // memory per SM, vs. A100 (sm_80) which has 192 KB.  With 128 KB available the occupancy
+    // targets must be revised downward for large-tile cases and upward where the smaller shared
+    // footprint now fits more blocks than the generic Ampere config assumes.
+    //
+    // Key changes vs. ggml_cuda_fattn_mma_get_config_ampere:
+    //   - Q_in_reg=true is kept for all DKQ<=256 (same as Ampere) to minimise shared use.
+    //   - nbatch_fa for the ncols=8 cases of DKQ=80/96/112/128/256 is halved so that the KV
+    //     tile fits in 128 KB at occupancy>1 (the A100 could fit 2 blocks at the larger size).
+    //   - Occupancy is raised where the smaller shared footprint allows extra blocks:
+    //       DKQ= 64: occ 2->3 (ncols=8), 2->4 (ncols=16/32/64)
+    //       DKQ= 80: occ 2->4 (ncols<=32), 2->3 (ncols=64)
+    //       DKQ= 96: occ 2->4 (ncols<=32), 2->3 (ncols=64)
+    //       DKQ=112: occ 2->3 (all ncols)
+    //       DKQ=128: occ 2->3 (ncols<=32), unchanged (ncols=64)
+    //       DKQ=256: occ 4->3 (ncols=8/16, smem-limited), 2->3 (ncols=32/64)
+    //   - DKQ=512/576 fall through to the generic Ampere config unchanged.
+
+    // DKQ=64, DV=64 — smem per block: ~39 KB (ncols=8), ~20 KB (ncols=16/32), ~27 KB (ncols=64)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64,  8, 128, 3, 128,  32,  32,  32, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 16, 128, 4,  64,  32,  32,  32, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 32, 128, 4,  64,  32,  32,  32, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 64, 128, 4,  64,  32,  32,  32, 2, true);
+
+    // DKQ=80, DV=80 — ncols=8: nbatch_fa 128->64 (reduces smem ~46->23 KB, fits 4 blocks)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80,  8, 128, 4,  64,  40,  40,  40, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 16, 128, 4,  64,  40,  40,  40, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 32, 128, 4,  64,  40,  40,  40, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 64, 128, 3,  64,  40,  40,  40, 2, true);
+
+    // DKQ=96, DV=96 — ncols=8: nbatch_fa 128->64 (reduces smem ~54->27 KB, fits 4 blocks)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96,  8, 128, 4,  64,  48,  48,  48, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 16, 128, 4,  64,  48,  48,  48, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 32, 128, 4,  64,  48,  48,  48, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 64, 128, 3,  64,  48,  48,  48, 2, true);
+
+    // DKQ=112, DV=112 — ncols=8: nbatch_fa 128->64 (reduces smem ~62->31 KB, fits 3 blocks)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112,  8, 128, 3,  64,  56,  56,  56, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 16, 128, 3,  64,  56,  56,  56, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 32, 128, 3,  64,  56,  56,  56, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 64, 128, 3,  64,  56,  56,  56, 2, true);
+
+    // DKQ=128, DV=128 (Llama 3.x / Mistral) — the primary pp benchmark path.
+    // ncols=8: nbatch_fa 128->64 (reduces smem ~70->35 KB, enables 3 blocks vs 1 on Ampere)
+    // ncols=16/32: ~36-39 KB/block -> 3 blocks; ncols=64: ~43 KB/block -> 2 blocks
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128,  8, 128, 3,  64,  64,  64,  64, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 16, 128, 3,  64,  64,  64,  64, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 32, 128, 3,  64,  64,  64,  64, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 64, 128, 2,  64,  64,  64,  64, 2, true);
+
+    // DKQ=256, DV=256 — nthreads=64 (ncols=8/16) or 128 (ncols=32/64).
+    // ncols=8: nbatch_fa 64->32 (reduces smem ~68->34 KB, fits 3 blocks; was 1 on sm_86)
+    // ncols=16: smem ~35 KB/block -> 3 blocks (was occupancy=4, only 3 fit in 128 KB)
+    // ncols=32/64: smem ~35-39 KB/block -> 3 blocks (was occupancy=2)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256,  8,  64, 3,  32, 128, 128, 128, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 16,  64, 3,  32, 128, 128, 128, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 32, 128, 3,  32, 128, 128, 128, 2, true);
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 64, 128, 3,  32, 128, 128, 128, 2, true);
+
+    // DKQ=512 and DKQ=576: fall back to generic Ampere config (Q_in_reg=false, unchanged).
+    return ggml_cuda_fattn_mma_get_config_ampere(DKQ, DV, ncols);
+}
+
 static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_config_turing(const int DKQ, const int DV, const int ncols) {
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256,  8, 128, 2,  64, 128, 128, 128, 2, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 16, 128, 2,  64, 128, 128, 128, 2, true);
@@ -170,6 +234,9 @@ static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_co
 
 static __host__ fattn_mma_config ggml_cuda_fattn_mma_get_config(const int DKQ, const int DV, const int ncols, const int cc) {
     if (ampere_mma_available(cc)) {
+        if (cc >= 860) {
+            return ggml_cuda_fattn_mma_get_config_sm86(DKQ, DV, ncols);
+        }
         return ggml_cuda_fattn_mma_get_config_ampere(DKQ, DV, ncols);
     }
     if (turing_mma_available(cc)) {
@@ -187,7 +254,11 @@ static __host__ fattn_mma_config ggml_cuda_fattn_mma_get_config(const int DKQ, c
 
 static constexpr __device__ fattn_mma_config ggml_cuda_fattn_mma_get_config(const int DKQ, const int DV, const int ncols) {
 #if defined(AMPERE_MMA_AVAILABLE)
+#  if __CUDA_ARCH__ >= 860
+    return ggml_cuda_fattn_mma_get_config_sm86(DKQ, DV, ncols);
+#  else
     return ggml_cuda_fattn_mma_get_config_ampere(DKQ, DV, ncols);
+#  endif
 #elif defined(TURING_MMA_AVAILABLE)
     return ggml_cuda_fattn_mma_get_config_turing(DKQ, DV, ncols);
 #elif defined(AMD_MFMA_AVAILABLE)
