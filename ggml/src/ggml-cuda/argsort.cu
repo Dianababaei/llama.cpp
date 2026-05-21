@@ -219,13 +219,17 @@ void argsort_f32_i32_cuda_bitonic(const float *   x,
     const dim3 block_nums(nrows, 1, 1);
     const size_t shared_mem = ncols_pad * sizeof(int);
 
-    // FIXME: this limit could be raised by ~2-4x on Ampere or newer
-    GGML_ASSERT(shared_mem <= ggml_cuda_info().devices[ggml_cuda_get_device()].smpb);
+    // On Ampere+ smpbo (opt-in) can be up to 164 KB vs the default 48 KB smpb.
+    const int    id    = ggml_cuda_get_device();
+    const size_t smpbo = ggml_cuda_info().devices[id].smpbo;
+    GGML_ASSERT(shared_mem <= smpbo);
 
     if (order == GGML_SORT_ORDER_ASC) {
+        CUDA_SET_SHARED_MEMORY_LIMIT((k_argsort_f32_i32<GGML_SORT_ORDER_ASC>), smpbo);
         k_argsort_f32_i32<GGML_SORT_ORDER_ASC>
             <<<block_nums, block_dims, shared_mem, stream>>>(x, dst, ncols, ncols_pad);
     } else if (order == GGML_SORT_ORDER_DESC) {
+        CUDA_SET_SHARED_MEMORY_LIMIT((k_argsort_f32_i32<GGML_SORT_ORDER_DESC>), smpbo);
         k_argsort_f32_i32<GGML_SORT_ORDER_DESC>
             <<<block_nums, block_dims, shared_mem, stream>>>(x, dst, ncols, ncols_pad);
     } else {
@@ -251,7 +255,7 @@ void ggml_cuda_op_argsort(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
 #ifdef GGML_CUDA_USE_CUB
     const int    ncols_pad      = next_power_of_2(ncols);
     const size_t shared_mem     = ncols_pad * sizeof(int);
-    const size_t max_shared_mem = ggml_cuda_info().devices[ggml_cuda_get_device()].smpb;
+    const size_t max_shared_mem = ggml_cuda_info().devices[ggml_cuda_get_device()].smpbo;
 
     if (shared_mem > max_shared_mem || ncols > 1024) {
         ggml_cuda_pool & pool = ctx.pool();
