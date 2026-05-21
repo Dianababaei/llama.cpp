@@ -35,6 +35,8 @@ struct fattn_mma_config {
         return fattn_mma_config{(nthreads_), (occupancy_), (nbatch_fa_), (nbatch_K2_), (nbatch_V2_), (nbatch_combine_), (nstages_target_), (Q_in_reg_)};           \
     }                                                                                                                                                              \
 
+// Ampere (sm_80–sm_86): 164 KB shmem/SM, 128 KB addressable per block.
+// nstages=2 (cp.async available), Q_in_reg=true for DKQ<=128.
 static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_config_ampere(const int DKQ, const int DV, const int ncols) {
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64,  8, 128, 2, 128,  32,  32,  32, 2, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 16, 128, 2,  64,  32,  32,  32, 2, true);
@@ -79,6 +81,9 @@ static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_co
     return fattn_mma_config(32, 1, 0, 0, 0, 0, 0, false);
 }
 
+// Turing (sm_75): 64 KB shmem/SM. DKQ<=128 configs fall back to Ampere table.
+// DKQ=256: nbatch_K2=128 fits within 64 KB budget (128 threads × 2 stages × 128×2 = 65536 B).
+// DKQ=512/576: reduced nbatch_K2=96 avoids register spills at 64 KB limit.
 static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_config_turing(const int DKQ, const int DV, const int ncols) {
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256,  8, 128, 2,  64, 128, 128, 128, 2, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 16, 128, 2,  64, 128, 128, 128, 2, true);
