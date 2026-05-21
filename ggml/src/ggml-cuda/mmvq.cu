@@ -64,7 +64,8 @@ enum mmvq_parameter_table_id {
     MMVQ_PARAMETERS_GCN,
     MMVQ_PARAMETERS_RDNA2,
     MMVQ_PARAMETERS_RDNA3_0,
-    MMVQ_PARAMETERS_RDNA4
+    MMVQ_PARAMETERS_RDNA4,
+    MMVQ_PARAMETERS_AMPERE
 };
 
 static constexpr __device__ mmvq_parameter_table_id get_device_table_id() {
@@ -76,6 +77,9 @@ static constexpr __device__ mmvq_parameter_table_id get_device_table_id() {
     return MMVQ_PARAMETERS_RDNA2;
 #elif defined(GCN) || defined(CDNA)
     return MMVQ_PARAMETERS_GCN;
+#elif !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA) && defined(__CUDA_ARCH__) && \
+      __CUDA_ARCH__ >= GGML_CUDA_CC_AMPERE && __CUDA_ARCH__ < GGML_CUDA_CC_ADA_LOVELACE
+    return MMVQ_PARAMETERS_AMPERE;
 #else
     return MMVQ_PARAMETERS_GENERIC;
 #endif
@@ -93,6 +97,9 @@ static __host__ mmvq_parameter_table_id get_device_table_id(int cc) {
     }
     if (GGML_CUDA_CC_IS_GCN(cc) || GGML_CUDA_CC_IS_CDNA(cc)) {
         return MMVQ_PARAMETERS_GCN;
+    }
+    if (GGML_CUDA_CC_IS_NVIDIA(cc) && cc >= GGML_CUDA_CC_AMPERE && cc < GGML_CUDA_CC_ADA_LOVELACE) {
+        return MMVQ_PARAMETERS_AMPERE;
     }
     return MMVQ_PARAMETERS_GENERIC;
 }
@@ -363,11 +370,50 @@ static constexpr __host__ __device__ int calc_nwarps(ggml_type type, int ncols_d
         }
         return 1;
     }
+    if (table_id == MMVQ_PARAMETERS_AMPERE) {
+        // NVIDIA Ampere (sm_80/sm_86/sm_87): GA10x consumer parts (RTX 30-series)
+        // have very high memory bandwidth (e.g. RTX 3090 ~936 GB/s) but a modest
+        // SM count relative to data-center Ampere. For ncols_dst==1, raising
+        // nwarps to 8 on simple vec_dot quants increases warps-in-flight per SM
+        // and helps saturate DRAM during the tg phase. Types with complex
+        // vec_dot (Q3_K, IQ2_*, IQ3_*, IQ1_*) are kept on the generic shape to
+        // avoid register pressure / shared-table contention regressions.
+        if (ncols_dst == 1) {
+            switch (type) {
+                case GGML_TYPE_Q4_0:
+                case GGML_TYPE_Q4_1:
+                case GGML_TYPE_Q5_0:
+                case GGML_TYPE_Q5_1:
+                case GGML_TYPE_Q8_0:
+                case GGML_TYPE_Q4_K:
+                case GGML_TYPE_Q5_K:
+                case GGML_TYPE_Q6_K:
+                case GGML_TYPE_IQ4_NL:
+                case GGML_TYPE_IQ4_XS:
+                    return 8;
+                default:
+                    return 4;
+            }
+        }
+        switch (ncols_dst) {
+            case 2:
+            case 3:
+            case 4:
+                return 4;
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+                return 2;
+            default:
+                return 1;
+        }
+    }
     return 1;
 }
 
 static constexpr __host__ __device__ int calc_rows_per_block(int ncols_dst, int table_id, bool small_k = false, int nwarps = 1) {
-    if (table_id == MMVQ_PARAMETERS_GENERIC || table_id == MMVQ_PARAMETERS_GCN) {
+    if (table_id == MMVQ_PARAMETERS_GENERIC || table_id == MMVQ_PARAMETERS_GCN || table_id == MMVQ_PARAMETERS_AMPERE) {
         switch (ncols_dst) {
             case 1:
                 return small_k ? nwarps : 1;

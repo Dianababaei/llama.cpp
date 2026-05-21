@@ -36,45 +36,69 @@ struct fattn_mma_config {
     }                                                                                                                                                              \
 
 static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_config_ampere(const int DKQ, const int DV, const int ncols) {
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64,  8, 128, 2, 128,  32,  32,  32, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 16, 128, 2,  64,  32,  32,  32, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 32, 128, 2,  64,  32,  32,  32, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 64, 128, 2,  64,  32,  32,  32, 2, true);
+    // Notation for trailing comments (sm_86: warp_size=32, cols_per_warp=16, sizeof(half2)=4 B, 1 KB=1024 B):
+    //   nwarps        = nthreads / 32
+    //   combine       = nwarps * cols_per_warp * (nbatch_combine+4) * 4
+    //   Q             = ncols  * (DKQ/2+4)                          * 4
+    //   KV            = nbatch_fa * (max(nbatch_K2, nbatch_V2)+4)   * 4   [1-stage shared-buffer formula]
+    //   Q_in_reg=true  =>  total = max(combine, max(Q, KV))   [Q and KV share the same buffer]
+    //   Q_in_reg=false =>  total = max(combine, Q + KV)        [Q and KV must coexist in shmem]
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80,  8, 128, 2, 128,  40,  40,  40, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 16, 128, 2,  64,  40,  40,  40, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 32, 128, 2,  64,  40,  40,  40, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 64, 128, 2,  64,  40,  40,  40, 2, true);
+    // DKQ=64, DV=64 -----------------------------------------------------------------
+    // Invariant: DKQ/2=32 <= 128, so nbatch_K2=DKQ/2=32 and nbatch_V2=DV/2=32 (square, DKQ==DV).
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64,  8, 128, 2, 128,  32,  32,  32, 2, true);  // shmem = max(combine=4*16*(32+4)*4=9KB,  max(Q=8*(32+4)*4=1.1KB,  KV=128*(32+4)*4=18KB))  = max(9KB, 18KB) = 18KB;  nbatch_K2=DKQ/2=32, nbatch_V2=DV/2=32
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 16, 128, 2,  64,  32,  32,  32, 2, true);  // shmem = max(combine=9KB,                max(Q=16*(32+4)*4=2.25KB, KV=64*(32+4)*4=9KB))   = max(9KB, 9KB)  = 9KB;   nbatch_K2=DKQ/2=32, nbatch_V2=DV/2=32
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 32, 128, 2,  64,  32,  32,  32, 2, true);  // shmem = max(combine=9KB,                max(Q=32*(32+4)*4=4.5KB,  KV=64*(32+4)*4=9KB))   = max(9KB, 9KB)  = 9KB;   nbatch_K2=DKQ/2=32, nbatch_V2=DV/2=32
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 64, 128, 2,  64,  32,  32,  32, 2, true);  // shmem = max(combine=9KB,                max(Q=64*(32+4)*4=9KB,    KV=64*(32+4)*4=9KB))   = max(9KB, 9KB)  = 9KB;   nbatch_K2=DKQ/2=32, nbatch_V2=DV/2=32
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96,  8, 128, 2, 128,  48,  48,  48, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 16, 128, 2,  64,  48,  48,  48, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 32, 128, 2,  64,  48,  48,  48, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 64, 128, 2,  64,  48,  48,  48, 2, true);
+    // DKQ=80, DV=80 -----------------------------------------------------------------
+    // Invariant: DKQ/2=40 <= 128, so nbatch_K2=DKQ/2=40 and nbatch_V2=DV/2=40 (square, DKQ==DV).
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80,  8, 128, 2, 128,  40,  40,  40, 2, true);  // shmem = max(combine=4*16*(40+4)*4=11KB, max(Q=8*(40+4)*4=1.4KB,   KV=128*(40+4)*4=22KB))  = max(11KB, 22KB) = 22KB; nbatch_K2=DKQ/2=40, nbatch_V2=DV/2=40
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 16, 128, 2,  64,  40,  40,  40, 2, true);  // shmem = max(combine=11KB,               max(Q=16*(44)*4=2.75KB,   KV=64*(44)*4=11KB))     = max(11KB, 11KB) = 11KB; nbatch_K2=DKQ/2=40, nbatch_V2=DV/2=40
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 32, 128, 2,  64,  40,  40,  40, 2, true);  // shmem = max(combine=11KB,               max(Q=32*(44)*4=5.5KB,    KV=64*(44)*4=11KB))     = max(11KB, 11KB) = 11KB; nbatch_K2=DKQ/2=40, nbatch_V2=DV/2=40
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 64, 128, 2,  64,  40,  40,  40, 2, true);  // shmem = max(combine=11KB,               max(Q=64*(44)*4=11KB,     KV=64*(44)*4=11KB))     = max(11KB, 11KB) = 11KB; nbatch_K2=DKQ/2=40, nbatch_V2=DV/2=40
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112,  8, 128, 2, 128,  56,  56,  56, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 16, 128, 2,  64,  56,  56,  56, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 32, 128, 2,  64,  56,  56,  56, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 64, 128, 2,  64,  56,  56,  56, 2, true);
+    // DKQ=96, DV=96 -----------------------------------------------------------------
+    // Invariant: DKQ/2=48 <= 128, so nbatch_K2=DKQ/2=48 and nbatch_V2=DV/2=48 (square, DKQ==DV).
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96,  8, 128, 2, 128,  48,  48,  48, 2, true);  // shmem = max(combine=4*16*(48+4)*4=13KB, max(Q=8*(48+4)*4=1.6KB,   KV=128*(48+4)*4=26KB))  = max(13KB, 26KB) = 26KB; nbatch_K2=DKQ/2=48, nbatch_V2=DV/2=48
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 16, 128, 2,  64,  48,  48,  48, 2, true);  // shmem = max(combine=13KB,               max(Q=16*(52)*4=3.25KB,   KV=64*(52)*4=13KB))     = max(13KB, 13KB) = 13KB; nbatch_K2=DKQ/2=48, nbatch_V2=DV/2=48
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 32, 128, 2,  64,  48,  48,  48, 2, true);  // shmem = max(combine=13KB,               max(Q=32*(52)*4=6.5KB,    KV=64*(52)*4=13KB))     = max(13KB, 13KB) = 13KB; nbatch_K2=DKQ/2=48, nbatch_V2=DV/2=48
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 64, 128, 2,  64,  48,  48,  48, 2, true);  // shmem = max(combine=13KB,               max(Q=64*(52)*4=13KB,     KV=64*(52)*4=13KB))     = max(13KB, 13KB) = 13KB; nbatch_K2=DKQ/2=48, nbatch_V2=DV/2=48
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128,  8, 128, 2, 128,  64,  64,  64, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 16, 128, 2,  64,  64,  64,  64, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 32, 128, 2,  64,  64,  64,  64, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 64, 128, 2,  64,  64,  64,  64, 2, true);
+    // DKQ=112, DV=112 ---------------------------------------------------------------
+    // Invariant: DKQ/2=56 <= 128, so nbatch_K2=DKQ/2=56 and nbatch_V2=DV/2=56 (square, DKQ==DV).
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112,  8, 128, 2, 128,  56,  56,  56, 2, true);  // shmem = max(combine=4*16*(56+4)*4=15KB, max(Q=8*(56+4)*4=1.9KB,   KV=128*(56+4)*4=30KB))  = max(15KB, 30KB) = 30KB; nbatch_K2=DKQ/2=56, nbatch_V2=DV/2=56
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 16, 128, 2,  64,  56,  56,  56, 2, true);  // shmem = max(combine=15KB,               max(Q=16*(60)*4=3.75KB,   KV=64*(60)*4=15KB))     = max(15KB, 15KB) = 15KB; nbatch_K2=DKQ/2=56, nbatch_V2=DV/2=56
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 32, 128, 2,  64,  56,  56,  56, 2, true);  // shmem = max(combine=15KB,               max(Q=32*(60)*4=7.5KB,    KV=64*(60)*4=15KB))     = max(15KB, 15KB) = 15KB; nbatch_K2=DKQ/2=56, nbatch_V2=DV/2=56
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 64, 128, 2,  64,  56,  56,  56, 2, true);  // shmem = max(combine=15KB,               max(Q=64*(60)*4=15KB,     KV=64*(60)*4=15KB))     = max(15KB, 15KB) = 15KB; nbatch_K2=DKQ/2=56, nbatch_V2=DV/2=56
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256,  8,  64, 4,  64, 128, 128, 128, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 16,  64, 4,  32, 128, 128, 128, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 32, 128, 2,  32, 128, 128, 128, 2, true);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 64, 128, 2,  32, 128, 128, 128, 2, true);
+    // DKQ=128, DV=128 ---------------------------------------------------------------
+    // Invariant: DKQ/2=64 <= 128, so nbatch_K2=DKQ/2=64 and nbatch_V2=DV/2=64 (square, DKQ==DV).
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128,  8, 128, 2, 128,  64,  64,  64, 2, true);  // shmem = max(combine=4*16*(64+4)*4=17KB, max(Q=8*(64+4)*4=2.1KB,   KV=128*(64+4)*4=34KB))  = max(17KB, 34KB) = 34KB; nbatch_K2=DKQ/2=64, nbatch_V2=DV/2=64
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 16, 128, 2,  64,  64,  64,  64, 2, true);  // shmem = max(combine=17KB,               max(Q=16*(68)*4=4.25KB,   KV=64*(68)*4=17KB))     = max(17KB, 17KB) = 17KB; nbatch_K2=DKQ/2=64, nbatch_V2=DV/2=64
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 32, 128, 2,  64,  64,  64,  64, 2, true);  // shmem = max(combine=17KB,               max(Q=32*(68)*4=8.5KB,    KV=64*(68)*4=17KB))     = max(17KB, 17KB) = 17KB; nbatch_K2=DKQ/2=64, nbatch_V2=DV/2=64
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 64, 128, 2,  64,  64,  64,  64, 2, true);  // shmem = max(combine=17KB,               max(Q=64*(68)*4=17KB,     KV=64*(68)*4=17KB))     = max(17KB, 17KB) = 17KB; nbatch_K2=DKQ/2=64, nbatch_V2=DV/2=64
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512,  8,  64, 4,  32, 256, 256, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 16,  64, 4,  32, 256, 256, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 32, 128, 2,  32, 128, 128, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 64, 256, 1,  32, 128, 128, 128, 1, false);
+    // DKQ=256, DV=256 ---------------------------------------------------------------
+    // Invariant: DKQ/2=128 <= 128, so nbatch_K2=DKQ/2=128 and nbatch_V2=DV/2=128 (square, DKQ==DV).
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256,  8,  64, 4,  64, 128, 128, 128, 2, true);  // shmem = max(combine=2*16*(128+4)*4=16.5KB, max(Q=8*(128+4)*4=4.1KB,   KV=64*(128+4)*4=33KB))   = max(16.5KB, 33KB)   = 33KB;   nbatch_K2=DKQ/2=128, nbatch_V2=DV/2=128
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 16,  64, 4,  32, 128, 128, 128, 2, true);  // shmem = max(combine=16.5KB,                max(Q=16*(132)*4=8.25KB,   KV=32*(132)*4=16.5KB))   = max(16.5KB, 16.5KB) = 16.5KB; nbatch_K2=DKQ/2=128, nbatch_V2=DV/2=128
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 32, 128, 2,  32, 128, 128, 128, 2, true);  // shmem = max(combine=4*16*(132)*4=33KB,     max(Q=32*(132)*4=16.5KB,   KV=32*(132)*4=16.5KB))   = max(33KB, 16.5KB)   = 33KB;   nbatch_K2=DKQ/2=128, nbatch_V2=DV/2=128
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 64, 128, 2,  32, 128, 128, 128, 2, true);  // shmem = max(combine=33KB,                  max(Q=64*(132)*4=33KB,     KV=32*(132)*4=16.5KB))   = max(33KB, 33KB)     = 33KB;   nbatch_K2=DKQ/2=128, nbatch_V2=DV/2=128
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512,  8,  64, 4,  32, 288, 256, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 16,  64, 4,  32, 288, 256, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 32, 128, 2,  32, 160, 128, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 64, 256, 1,  32, 160, 128, 128, 1, false);
+    // DKQ=512, DV=512: Q_in_reg=false because Q+KV is within 128KB but max(Q,KV) would also fit;
+    //   however, the large register pressure from Q_in_reg=true at D=512 makes false preferable.
+    // Q uses DKQ/2+4 = 256+4 = 260; KV uses max(nbatch_K2, nbatch_V2)+4.
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512,  8,  64, 4,  32, 256, 256, 128, 1, false); // shmem = max(combine=2*16*(128+4)*4=16.5KB, Q=8*(260)*4=8.1KB+KV=32*(260)*4=32.5KB=40.6KB)   = max(16.5KB, 40.6KB) = 40.6KB; if Q_in_reg: max(Q,KV)=32.5KB  <= 128KB (sm_86)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 16,  64, 4,  32, 256, 256, 128, 1, false); // shmem = max(combine=16.5KB,                Q=16*(260)*4=16.25KB+KV=32*(260)*4=32.5KB=48.75KB) = max(16.5KB, 48.75KB)= 48.75KB;if Q_in_reg: max(Q,KV)=32.5KB  <= 128KB (sm_86)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 32, 128, 2,  32, 128, 128, 128, 1, false); // shmem = max(combine=4*16*(132)*4=33KB,     Q=32*(260)*4=32.5KB+KV=32*(132)*4=16.5KB=49KB)    = max(33KB, 49KB)     = 49KB;   if Q_in_reg: max(Q,KV)=32.5KB  <= 128KB (sm_86)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 64, 256, 1,  32, 128, 128, 128, 1, false); // shmem = max(combine=8*16*(132)*4=66KB,     Q=64*(260)*4=65KB+KV=32*(132)*4=16.5KB=81.5KB)    = max(66KB, 81.5KB)   = 81.5KB; if Q_in_reg: max(Q,KV)=65KB    <= 128KB (sm_86)
+
+    // DKQ=576, DV=512: Q uses DKQ/2+4=292; KV uses max(nbatch_K2,nbatch_V2)+4.
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512,  8,  64, 4,  32, 288, 256, 128, 1, false); // shmem = max(combine=16.5KB, Q=8*(292)*4=9.1KB+KV=32*(max(288,256)+4)*4=32*(292)*4=36.5KB=45.6KB)  = max(16.5KB, 45.6KB) = 45.6KB; if Q_in_reg: max(Q,KV)=36.5KB <= 128KB (sm_86)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 16,  64, 4,  32, 288, 256, 128, 1, false); // shmem = max(combine=16.5KB, Q=16*(292)*4=18.25KB+KV=32*(292)*4=36.5KB=54.75KB)                    = max(16.5KB, 54.75KB)= 54.75KB;if Q_in_reg: max(Q,KV)=36.5KB <= 128KB (sm_86)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 32, 128, 2,  32, 160, 128, 128, 1, false); // shmem = max(combine=33KB,   Q=32*(292)*4=36.5KB+KV=32*(max(160,128)+4)*4=32*(164)*4=20.5KB=57KB)   = max(33KB, 57KB)     = 57KB;   if Q_in_reg: max(Q,KV)=36.5KB <= 128KB (sm_86)
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 64, 256, 1,  32, 160, 128, 128, 1, false); // shmem = max(combine=66KB,   Q=64*(292)*4=73KB+KV=32*(164)*4=20.5KB=93.5KB)                         = max(66KB, 93.5KB)   = 93.5KB; if Q_in_reg: max(Q,KV)=73KB   <= 128KB (sm_86)
 
     return fattn_mma_config(32, 1, 0, 0, 0, 0, 0, false);
 }
@@ -85,15 +109,26 @@ static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_co
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 32, 128, 2,  64, 128, 128,  64, 2, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 64, 128, 2,  64, 128, 128,  64, 2, true);
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512,  8,  64, 4,  32,  96,  64, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 16,  64, 4,  32,  96,  64, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 32, 128, 2,  32, 128, 128, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 64, 256, 1,  32, 128, 128, 128, 1, false);
+    // DKQ=512, DV=512: DKQ/2=256 > 128, so a split of the K-load is required.
+    // Turing (sm_75) has 64 KB shared memory per block.
+    // With nbatch_fa=64: full nbatch_K2=256 would need 64*(256+4)*4 = 65.0 KB > 64 KB.
+    // nbatch_K2=128 would need 64*(128+4)*4 = 33.8 KB <= 64 KB, but register pressure
+    // from keeping more K tiles live causes spills on sm_75; nbatch_K2=96 avoids that.
+    // nbatch_V2=DV/2=256 would similarly overflow; nbatch_V2=64 is the largest value that fits
+    // alongside Q for the given nbatch_fa without exceeding 64 KB.
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512,  8,  64, 4,  32,  96,  64, 128, 1, false); // nbatch_K2=96 < DKQ/2=256: sm_75 shmem limit 64KB forces split; nbatch_V2=64 < DV/2=256: same limit
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 16,  64, 4,  32,  96,  64, 128, 1, false); // nbatch_K2=96 < DKQ/2=256: sm_75 shmem limit 64KB forces split; nbatch_V2=64 < DV/2=256: same limit
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 32, 128, 2,  32, 128, 128, 128, 1, false); // nbatch_K2=DKQ/2=128 fits within 64KB; nbatch_V2=DV/2=128 same
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 64, 256, 1,  32, 128, 128, 128, 1, false); // nbatch_K2=DKQ/2=128 (split required: DKQ/2=256>128); nbatch_V2=DV/2=128 same
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512,  8,  64, 4,  32,  96,  64, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 16,  64, 4,  32,  96,  64, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 32, 128, 2,  32, 160, 128, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 64, 256, 1,  32, 160, 128, 128, 1, false);
+    // DKQ=576, DV=512: DKQ/2=288 > 128, K-load split required in all cases.
+    // Turing (sm_75) 64 KB limit: with nbatch_fa=64, nbatch_K2=288 needs 64*(288+4)*4=74.5KB > 64KB.
+    // nbatch_K2=96: 64*(96+4)*4=25.6KB; nbatch_K2=160 (ncols>=32): 128*(160+4)*4=84KB > 64KB.
+    // nbatch_V2 (DV=512, DV/2=256): nbatch_V2=64 chosen to fit within 64KB shmem alongside K.
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512,  8,  64, 4,  32,  96,  64, 128, 1, false); // nbatch_K2=96 < DKQ/2=288: sm_75 64KB limit (288+4)*64*4=74.5KB > 64KB; nbatch_V2=64 < DV/2=256: same limit
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 16,  64, 4,  32,  96,  64, 128, 1, false); // nbatch_K2=96 < DKQ/2=288: sm_75 64KB limit; nbatch_V2=64 < DV/2=256: same limit
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 32, 128, 2,  32, 160, 128, 128, 1, false); // nbatch_K2=160 < DKQ/2=288: sm_75 64KB: (288+4)*128*4=149KB >> 64KB; 160 chosen; nbatch_V2=128 < DV/2=256: fits in 64KB
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 64, 256, 1,  32, 160, 128, 128, 1, false); // nbatch_K2=160 < DKQ/2=288: sm_75 64KB limit; nbatch_V2=128 < DV/2=256: fits in 64KB
 
     return ggml_cuda_fattn_mma_get_config_ampere(DKQ, DV, ncols);
 }
@@ -122,9 +157,16 @@ static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_co
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 32, 128, 2,  32, 128, 128, 128, 1, false);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(512, 512, 64, 256, 1,  32, 128, 128, 128, 1, false);
 
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 16,  64, 4,  32,  96,  64, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 32, 128, 2,  32, 160, 128, 128, 1, false);
-    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 64, 256, 1,  32, 160, 128, 128, 1, false);
+    // DKQ=576, DV=512: DKQ/2=288 > 128, K-load split required.
+    // RDNA LDS is typically 64 KB per workgroup. With nbatch_fa=64, full nbatch_K2=288 needs
+    // 64*(288+4)*4 = 74.5 KB > 64 KB; nbatch_K2=96 gives 64*(96+4)*4=25.6KB, safe.
+    // For ncols>=32 (nbatch_fa=128): nbatch_K2=160 gives 128*(160+4)*4=84KB; just within
+    // the 96KB LDS available on some RDNA3 devices (GFX1100 class).
+    // nbatch_V2: DV/2=256; nbatch_V2=64 chosen for ncols=16 to fit alongside K in 64KB LDS;
+    //            nbatch_V2=128 for ncols>=32 fits when LDS >=96KB or K and V share buffer.
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 16,  64, 4,  32,  96,  64, 128, 1, false); // nbatch_K2=96 < DKQ/2=288: RDNA LDS 64KB limit; nbatch_V2=64 < DV/2=256: same limit
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 32, 128, 2,  32, 160, 128, 128, 1, false); // nbatch_K2=160 < DKQ/2=288: RDNA LDS limit; nbatch_V2=128 < DV/2=256: fits in available LDS
+    GGML_CUDA_FATTN_MMA_CONFIG_CASE(576, 512, 64, 256, 1,  32, 160, 128, 128, 1, false); // nbatch_K2=160 < DKQ/2=288: RDNA LDS limit; nbatch_V2=128 < DV/2=256: fits in available LDS
 
     // TODO tune specifically for RDNA
     return ggml_cuda_fattn_mma_get_config_ampere(DKQ, DV, ncols);
@@ -132,31 +174,39 @@ static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_co
 
 static constexpr __host__ __device__ fattn_mma_config ggml_cuda_fattn_mma_get_config_cdna(const int DKQ, const int DV, const int ncols) {
     // Conservative configs for CDNA (MI100+): 64KB LDS, wavefront64, nstages=1 (no cp.async).
+    // Invariant for all DKQ<=256 blocks: DKQ/2<=128, so nbatch_K2=DKQ/2 and nbatch_V2=DV/2 (square configs).
+
+    // DKQ=64, DV=64: DKQ/2=32 <= 128 => nbatch_K2=DKQ/2=32, nbatch_V2=DV/2=32.
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64,  8, 128, 2, 128,  32,  32,  32, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 16, 128, 2,  64,  32,  32,  32, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 32, 128, 2,  64,  32,  32,  32, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 64,  64, 64, 256, 2,  64,  32,  32,  32, 1, true);
 
+    // DKQ=80, DV=80: DKQ/2=40 <= 128 => nbatch_K2=DKQ/2=40, nbatch_V2=DV/2=40.
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80,  8, 128, 2, 128,  40,  40,  40, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 16, 128, 2,  64,  40,  40,  40, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 32, 128, 2,  64,  40,  40,  40, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 80,  80, 64, 256, 2,  64,  40,  40,  40, 1, true);
 
+    // DKQ=96, DV=96: DKQ/2=48 <= 128 => nbatch_K2=DKQ/2=48, nbatch_V2=DV/2=48.
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96,  8, 128, 2, 128,  48,  48,  48, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 16, 128, 2,  64,  48,  48,  48, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 32, 128, 2,  64,  48,  48,  48, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE( 96,  96, 64, 256, 2,  64,  48,  48,  48, 1, true);
 
+    // DKQ=112, DV=112: DKQ/2=56 <= 128 => nbatch_K2=DKQ/2=56, nbatch_V2=DV/2=56.
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112,  8, 128, 2, 128,  56,  56,  56, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 16, 128, 2,  64,  56,  56,  56, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 32, 128, 2,  64,  56,  56,  56, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(112, 112, 64, 256, 2,  64,  56,  56,  56, 1, true);
 
+    // DKQ=128, DV=128: DKQ/2=64 <= 128 => nbatch_K2=DKQ/2=64, nbatch_V2=DV/2=64.
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128,  8, 128, 2, 128,  64,  64,  64, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 16, 128, 2,  64,  64,  64,  64, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 32, 128, 2,  64,  64,  64,  64, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(128, 128, 64, 256, 2,  64,  64,  64,  64, 1, true);
 
+    // DKQ=256, DV=256: DKQ/2=128 <= 128 => nbatch_K2=DKQ/2=128, nbatch_V2=DV/2=128.
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256,  8,  64, 4,  64, 128, 128, 128, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 16,  64, 4,  32, 128, 128, 128, 1, true);
     GGML_CUDA_FATTN_MMA_CONFIG_CASE(256, 256, 32, 128, 2,  32, 128, 128, 128, 1, true);
