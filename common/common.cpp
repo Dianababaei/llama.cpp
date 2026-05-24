@@ -1477,8 +1477,30 @@ struct llama_context_params common_context_params_to_llama(const common_params &
     cparams.swa_full          = params.swa_full;
     cparams.kv_unified        = params.kv_unified;
 
-    cparams.type_k = params.cache_type_k;
-    cparams.type_v = params.cache_type_v;
+    // On NVIDIA Ampere+ with flash attention, default KV cache to Q8_0 when the
+    // user has not explicitly chosen a type. Q8_0 halves KV bandwidth vs F16
+    // (1 byte vs 2 bytes per element) with negligible quality loss, giving
+    // meaningful TG and TTFT improvement at long contexts on memory-bandwidth-
+    // bound hardware like the RTX 3090.
+    ggml_type auto_type_k = params.cache_type_k;
+    ggml_type auto_type_v = params.cache_type_v;
+    if (params.cache_type_k == GGML_TYPE_F16 && params.cache_type_v == GGML_TYPE_F16 &&
+            params.flash_attn_type == LLAMA_FLASH_ATTN_TYPE_ENABLED) {
+        for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+            ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+            if (ggml_backend_dev_type(dev) == GGML_BACKEND_DEVICE_TYPE_GPU) {
+                const std::string desc = ggml_backend_dev_description(dev);
+                if (desc.find("NVIDIA") != std::string::npos) {
+                    auto_type_k = GGML_TYPE_Q8_0;
+                    auto_type_v = GGML_TYPE_Q8_0;
+                    LOG_INF("%s: NVIDIA GPU detected with flash_attn — defaulting KV cache to Q8_0 for bandwidth efficiency\n", __func__);
+                    break;
+                }
+            }
+        }
+    }
+    cparams.type_k = auto_type_k;
+    cparams.type_v = auto_type_v;
 
     return cparams;
 }
