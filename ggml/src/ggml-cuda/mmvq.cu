@@ -295,7 +295,7 @@ static constexpr __device__ int get_mmvq_mmid_max_batch_for_device() {
 }
 
 static constexpr __host__ __device__ int calc_nwarps(ggml_type type, int ncols_dst, mmvq_parameter_table_id table_id) {
-    if (table_id == MMVQ_PARAMETERS_GENERIC || table_id == MMVQ_PARAMETERS_AMPERE) {
+    if (table_id == MMVQ_PARAMETERS_GENERIC) {
         switch (ncols_dst) {
             case 1:
             case 2:
@@ -310,7 +310,43 @@ static constexpr __host__ __device__ int calc_nwarps(ggml_type type, int ncols_d
             default:
                 return 1;
         }
-    } else if (table_id == MMVQ_PARAMETERS_GCN) {
+    }
+    if (table_id == MMVQ_PARAMETERS_AMPERE) {
+        // nwarps=8 saturates Ampere DRAM bandwidth for simple quant types at ncols_dst=1.
+        // Complex types (Q3_K, IQ2_*, IQ3_*) regress due to register pressure.
+        if (ncols_dst == 1) {
+            switch (type) {
+                case GGML_TYPE_Q4_0:
+                case GGML_TYPE_Q4_1:
+                case GGML_TYPE_Q5_0:
+                case GGML_TYPE_Q5_1:
+                case GGML_TYPE_Q8_0:
+                case GGML_TYPE_Q2_K:
+                case GGML_TYPE_Q4_K:
+                case GGML_TYPE_Q5_K:
+                case GGML_TYPE_Q6_K:
+                case GGML_TYPE_IQ4_NL:
+                case GGML_TYPE_IQ4_XS:
+                    return 8;
+                default:
+                    return 4;
+            }
+        }
+        switch (ncols_dst) {
+            case 2:
+            case 3:
+            case 4:
+                return 4;
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+                return 2;
+            default:
+                return 1;
+        }
+    }
+    if (table_id == MMVQ_PARAMETERS_GCN) {
         switch (ncols_dst) {
             case 1:
             case 2:

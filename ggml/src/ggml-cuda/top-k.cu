@@ -73,7 +73,7 @@ void ggml_cuda_op_top_k(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
     // Fall back to argsort + copy
     const int    ncols_pad      = next_power_of_2(ncols);
     const size_t shared_mem     = ncols_pad * sizeof(int);
-    const size_t max_shared_mem = ggml_cuda_info().devices[ggml_cuda_get_device()].smpb;
+    const size_t max_shared_mem = ggml_cuda_info().devices[ggml_cuda_get_device()].smpbo;
 
     ggml_cuda_pool_alloc<int> temp_dst_alloc(pool, ncols * nrows);
     int *                     tmp_dst = temp_dst_alloc.get();
