@@ -410,7 +410,25 @@ static constexpr __host__ __device__ int calc_nwarps(ggml_type type, int ncols_d
 }
 
 static constexpr __host__ __device__ int calc_rows_per_block(int ncols_dst, int table_id, bool small_k = false, int nwarps = 1) {
-    if (table_id == MMVQ_PARAMETERS_GENERIC || table_id == MMVQ_PARAMETERS_GCN || table_id == MMVQ_PARAMETERS_AMPERE) {
+    if (table_id == MMVQ_PARAMETERS_AMPERE) {
+        switch (ncols_dst) {
+            case 1:
+                // rows_per_block=2 at ncols_dst=1: processes 2 output rows per block,
+                // halving kernel launch count and improving SM occupancy on sm_86.
+                return small_k ? nwarps : 2;
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+                return 2;
+            default:
+                return 1;
+        }
+    }
+    if (table_id == MMVQ_PARAMETERS_GENERIC || table_id == MMVQ_PARAMETERS_GCN) {
         switch (ncols_dst) {
             case 1:
                 return small_k ? nwarps : 1;
